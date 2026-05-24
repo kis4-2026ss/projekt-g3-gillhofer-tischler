@@ -18,3 +18,4 @@ class State(TypedDict):
     subtasks: Annotated[List[SubTask], operator.add]
     final_output: Optional[str]
     metadata: dict
+    retry_count: int

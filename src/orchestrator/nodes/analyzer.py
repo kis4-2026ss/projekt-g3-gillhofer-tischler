@@ -9,6 +9,11 @@ def analyzer_node(state: State):
     Analyzes the user input and decomposes it into subtasks.
     """
     user_input = state["user_input"]
+    retry_count = state.get("retry_count", 0)
+    
+    if retry_count > 0:
+        print(f"--- Retrying Task Analysis (Attempt {retry_count + 1}) ---")
+
     print(f"--- Analyzing Task: {user_input} ---")
     
     model = os.getenv("MAIN_LLM_MODEL", "openrouter/google/gemini-2.0-flash-lite-preview-02-05:free")
@@ -97,7 +102,7 @@ def analyzer_node(state: State):
             print(f"  {i+1}. [{task.id}] {task.description}{deps}{caps}")
         print("-" * 50 + "\n")
         
-        return {"subtasks": subtasks, "metadata": metadata}
+        return {"subtasks": subtasks, "metadata": metadata, "retry_count": retry_count + 1}
         
     except Exception as e:
         print(f"Error parsing decomposition: {e}")
@@ -110,4 +115,4 @@ def analyzer_node(state: State):
             priority=1,
             dependencies=[]
         )
-        return {"subtasks": [fallback_task]}
+        return {"subtasks": [fallback_task], "retry_count": retry_count + 1}
