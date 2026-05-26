@@ -1,21 +1,37 @@
 from ..state import State
+from .registry import registry
 import os
 
 def router_node(state: State):
     """
-    Assigns models to subtasks (Initially manual).
+    Dynamically assigns models to subtasks based on required capabilities.
     """
     subtasks = state["subtasks"]
-    print("--- Routing Subtasks ---")
+    metadata = state.get("metadata", {})
+    routing_log = []
     
-    # Use a free model by default to avoid credit issues
-    default_free_model = os.getenv("MAIN_LLM_MODEL", "openrouter/google/gemini-2.0-flash-lite-preview-02-05:free")
+    print("--- Routing Subtasks Dynamically ---")
     
     updated_subtasks = []
     for task in subtasks:
-        # For now, assign the same free model to all tasks
-        task.assigned_model = default_free_model
-        task.status = "assigned"
+        if task.status == "pending" or not task.assigned_model:
+            # Use the registry to find the best model
+            best_model = registry.get_best_model(task.required_capabilities)
+            
+            task.assigned_model = best_model
+            task.status = "assigned"
+            
+            log_entry = {
+                "task_id": task.id,
+                "required": task.required_capabilities,
+                "assigned": best_model,
+                "rationale": f"Matched capabilities: {', '.join(task.required_capabilities)}"
+            }
+            routing_log.append(log_entry)
+            print(f"  [ROUTER] Task {task.id} -> {best_model}")
+            
         updated_subtasks.append(task)
         
-    return {"subtasks": updated_subtasks}
+    metadata["routing_decisions"] = routing_log
+    
+    return {"subtasks": updated_subtasks, "metadata": metadata}
