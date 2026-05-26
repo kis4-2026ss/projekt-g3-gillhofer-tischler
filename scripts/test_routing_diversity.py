@@ -26,6 +26,10 @@ def test_diverse_routing():
         {
             "name": "General Assistant",
             "capabilities": ["general"]
+        },
+        {
+            "name": "Image Generation",
+            "capabilities": ["image"]
         }
     ]
 

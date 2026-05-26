@@ -1,6 +1,6 @@
 from ..state import State, SubTask
 import os
-from litellm import completion
+from ..utils import call_with_retry, get_main_model
 from typing import List
 import json
 
@@ -16,7 +16,7 @@ def analyzer_node(state: State):
 
     print(f"--- Analyzing Task: {user_input} ---")
     
-    model = os.getenv("MAIN_LLM_MODEL", "openrouter/google/gemini-2.0-flash-lite-preview-02-05:free")
+    model = get_main_model()
     
     prompt = f"""
     You are an expert task analyzer and decomposer. Your goal is to interpret a complex user request, identify the core intent, and break it down into smaller, manageable subtasks.
@@ -26,11 +26,13 @@ def analyzer_node(state: State):
     Step 1: Analyze the overall intent and complexity (1-10).
     Step 2: Decompose the task into a logical sequence of subtasks.
     
+    IMPORTANT: Be efficient. If a task is simple (like generating a single image or answering a quick question), use only ONE subtask. Only decompose truly complex requests that require multiple distinct steps (e.g., research THEN summarize THEN generate image).
+    
     For each subtask, provide:
     - id: A unique string identifier.
     - description: A clear, actionable instruction.
     - expected_output: What the result of this subtask should look like.
-    - required_capabilities: A list of capabilities needed (e.g., 'research', 'coding', 'summarization', 'reasoning', 'creativity').
+    - required_capabilities: A list of capabilities needed (e.g., 'research', 'coding', 'summarization', 'reasoning', 'creativity', 'image').
     - priority: An integer (1 for highest priority, larger for lower).
     - dependencies: A list of 'id's of subtasks that must be completed BEFORE this one.
     
@@ -54,11 +56,14 @@ def analyzer_node(state: State):
     """
     
     try:
-        response = completion(
-            model=model, 
-            messages=[{"role": "system", "content": "You are a precise task analysis engine that only outputs JSON."},
-                      {"role": "user", "content": prompt}]
-        )
+        kwargs = {
+            "model": model,
+            "messages": [
+                {"role": "system", "content": "You are a precise task analysis engine that only outputs JSON."},
+                {"role": "user", "content": prompt}
+            ]
+        }
+        response = call_with_retry(kwargs)
         
         content = response.choices[0].message.content
         print(f"Analyzer Response: {content}")

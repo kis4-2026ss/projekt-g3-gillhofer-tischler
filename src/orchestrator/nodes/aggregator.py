@@ -1,5 +1,5 @@
 from ..state import State
-from litellm import completion
+from ..utils import call_with_retry, get_main_model
 import os
 
 def aggregator_node(state: State):
@@ -17,7 +17,7 @@ def aggregator_node(state: State):
     
     results_text = "\n\n".join(results)
     
-    model = os.getenv("MAIN_LLM_MODEL", "openrouter/google/gemini-2.0-flash-lite-preview-02-05:free")
+    model = get_main_model()
     
     prompt = f"""
     You are a Result Aggregator. Your task is to take the outputs from several specialized subtasks and synthesize them into a single, coherent, and comprehensive response that directly addresses the original user request.
@@ -38,13 +38,14 @@ def aggregator_node(state: State):
     """
     
     try:
-        response = completion(
-            model=model,
-            messages=[
+        kwargs = {
+            "model": model,
+            "messages": [
                 {"role": "system", "content": "You are an expert synthesizer. Your goal is to provide a final, polished response based on multiple input sources."},
                 {"role": "user", "content": prompt}
             ]
-        )
+        }
+        response = call_with_retry(kwargs)
         final_output = response.choices[0].message.content
         print(f"Aggregation complete. Length: {len(final_output)} characters.")
         

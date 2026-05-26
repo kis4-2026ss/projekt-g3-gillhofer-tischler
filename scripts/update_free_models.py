@@ -18,11 +18,20 @@ def update_free_models():
         for model in all_models:
             model_id = model.get("id", "")
             if model_id.endswith(":free"):
+                # Ensure the model ID starts with the provider prefix for LiteLLM
+                # OpenRouter models often need 'openrouter/' prefix explicitly
+                full_model_id = f"openrouter/{model_id}" if not model_id.startswith("openrouter/") else model_id
+
                 # Extract capabilities based on name and description
+
                 description = model.get("description", "").lower()
                 name = model.get("name", "").lower()
                 
                 capabilities = ["general"]
+                
+                # Image Generation
+                if any(k in description or k in name for k in ["image", "generate image", "vision", "multimodal", "synthesis"]):
+                    capabilities.append("image")
                 
                 # Coding
                 if any(k in description or k in name for k in ["code", "coder", "programming", "python", "javascript", "developer"]):
@@ -58,7 +67,7 @@ def update_free_models():
                     latency_score = 2 # Fast
                 
                 free_models.append({
-                    "model_id": model_id,
+                    "model_id": full_model_id,
                     "capabilities": list(set(capabilities)),
                     "cost_per_1k_tokens": 0.0,
                     "latency_score": latency_score,

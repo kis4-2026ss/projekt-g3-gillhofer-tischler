@@ -40,13 +40,18 @@ class CapabilityRegistry:
                 )
             ]
 
-    def get_best_model(self, required_capabilities: List[str]) -> str:
+    def get_best_model(self, required_capabilities: List[str], exclude_models: List[str] = None) -> str:
         """
         Selects the best free model based on capabilities and latency.
+        Allows excluding specific models (e.g., if they are rate-limited).
         """
+        exclude_models = exclude_models or []
         scored_models = []
         
         for model in self.models:
+            if model.model_id in exclude_models:
+                continue
+                
             # Calculate match score based on how many required capabilities the model has
             match_count = sum(1 for cap in required_capabilities if cap in model.capabilities)
             
@@ -56,12 +61,11 @@ class CapabilityRegistry:
                 missing_count = len(required_capabilities) - match_count
                 score = model.latency_score + (missing_count * 5)
                 
-                # Tie-breaker: prefer models with more relevant capabilities if scores are equal
-                # or models with fewer TOTAL capabilities (specialized)
-                # We'll use a tuple for sorting: (score, total_capabilities)
+                # Tie-breaker: prefer models with fewer TOTAL capabilities (specialized)
                 scored_models.append((model.model_id, score, len(model.capabilities)))
         
         if not scored_models:
+            # If everything is excluded, fallback to the very first one regardless
             return self.models[0].model_id
             
         # Sort by score (asc), then total_capabilities (asc) for specialization

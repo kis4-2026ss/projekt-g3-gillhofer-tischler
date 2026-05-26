@@ -7,10 +7,11 @@ def main():
     app = create_orchestrator()
     
     initial_state = {
-        "user_input": "Research the impact of AI on job markets and write a summary.",
+        "user_input": "generate the image of a realistic, playful, cute cat.",
         "subtasks": [],
         "final_output": None,
-        "metadata": {}
+        "metadata": {},
+        "retry_count": 0
     }
     
     print("Starting AI Meta-Orchestrator...")
