@@ -1,6 +1,5 @@
 from ..state import State
 from ..utils import call_with_retry, get_main_model
-import os
 import json
 
 def validator_node(state: State):
@@ -10,10 +9,25 @@ def validator_node(state: State):
     final_output = state.get("final_output")
     user_input = state.get("user_input")
     subtasks = state.get("subtasks", [])
+    metadata = state.get("metadata", {})
 
     if not final_output:
         print("--- Validator: No output to validate ---")
         return state
+
+    # If no subtask actually produced output, the run failed — don't ask the LLM to
+    # grade a failure message, just mark it invalid.
+    completed = [t for t in subtasks if t.status == "completed" and t.result]
+    if not completed or metadata.get("execution_failed"):
+        print("--- Validator: No successful subtasks; marking invalid ---")
+        metadata["validation"] = {
+            "score": 0,
+            "is_valid": False,
+            "feedback": "No subtasks produced output.",
+        }
+        print("[VALIDATOR] Quality Score: 0/100")
+        print("[VALIDATOR] Valid: False")
+        return {"metadata": metadata}
 
     print("--- Validating Output ---")
 
@@ -70,11 +84,18 @@ def validator_node(state: State):
 
         validation_data = json.loads(content)
 
-        print(f"[VALIDATOR] Quality Score: {validation_data.get('score')}/100")
-        print(f"[VALIDATOR] Valid: {validation_data.get('is_valid')}")
+        # Decide validity in code rather than trusting the LLM's self-reported boolean.
+        try:
+            score = int(validation_data.get("score", 0))
+        except (TypeError, ValueError):
+            score = 0
+        validation_data["score"] = score
+        validation_data["is_valid"] = score >= 70
+
+        print(f"[VALIDATOR] Quality Score: {score}/100")
+        print(f"[VALIDATOR] Valid: {validation_data['is_valid']}")
 
         # Add validation results to metadata
-        metadata = state.get("metadata", {})
         metadata["validation"] = validation_data
 
         return {"metadata": metadata}
@@ -82,7 +103,6 @@ def validator_node(state: State):
     except Exception as e:
         print(f"Error during validation: {e}")
         # Default fallback metadata
-        metadata = state.get("metadata", {})
         metadata["validation"] = {
             "score": 0,
             "error": str(e),

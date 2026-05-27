@@ -1,6 +1,5 @@
-from typing import List, Optional, TypedDict, Annotated
+from typing import List, Optional, TypedDict
 from pydantic import BaseModel, Field
-import operator
 
 class SubTask(BaseModel):
     id: str = Field(description="Unique identifier for the subtask")
@@ -15,7 +14,9 @@ class SubTask(BaseModel):
 
 class State(TypedDict):
     user_input: str
-    subtasks: Annotated[List[SubTask], operator.add]
+    # Plain list channel (overwrite semantics): every node returns the full updated
+    # list, so concatenation would duplicate subtasks each step.
+    subtasks: List[SubTask]
     final_output: Optional[str]
     metadata: dict
     retry_count: int

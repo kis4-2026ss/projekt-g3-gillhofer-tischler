@@ -12,7 +12,7 @@ def should_continue(state: State):
     """
     metadata = state.get("metadata", {})
     validation = metadata.get("validation", {})
-    is_valid = validation.get("is_valid", True)
+    is_valid = validation.get("is_valid", False)
     retry_count = state.get("retry_count", 0)
     
     if is_valid or retry_count >= 2:

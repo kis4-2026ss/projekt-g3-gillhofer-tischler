@@ -32,7 +32,7 @@ def analyzer_node(state: State):
     - id: A unique string identifier.
     - description: A clear, actionable instruction.
     - expected_output: What the result of this subtask should look like.
-    - required_capabilities: A list of capabilities needed (e.g., 'research', 'coding', 'summarization', 'reasoning', 'creativity', 'image').
+    - required_capabilities: A list of capabilities needed. Use ONLY these exact values: 'general', 'coding', 'reasoning', 'research', 'summarization', 'creative', 'image'. For any request to draw/generate/create a picture, use 'image'.
     - priority: An integer (1 for highest priority, larger for lower).
     - dependencies: A list of 'id's of subtasks that must be completed BEFORE this one.
     

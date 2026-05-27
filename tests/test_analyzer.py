@@ -5,7 +5,7 @@ from src.orchestrator.state import State, SubTask
 import json
 
 class TestAnalyzer(unittest.TestCase):
-    @patch('src.orchestrator.nodes.analyzer.completion')
+    @patch('src.orchestrator.nodes.analyzer.call_with_retry')
     def test_analyzer_success(self, mock_completion):
         # Mock response from LiteLLM
         mock_response = MagicMock()
@@ -49,7 +49,7 @@ class TestAnalyzer(unittest.TestCase):
         self.assertEqual(result["subtasks"][1].dependencies, ["1"])
         self.assertIsInstance(result["subtasks"][0], SubTask)
 
-    @patch('src.orchestrator.nodes.analyzer.completion')
+    @patch('src.orchestrator.nodes.analyzer.call_with_retry')
     def test_analyzer_json_markdown(self, mock_completion):
         # Mock response with markdown formatting
         mock_response = MagicMock()
