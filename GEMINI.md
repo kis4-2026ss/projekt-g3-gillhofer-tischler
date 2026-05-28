@@ -43,7 +43,7 @@ The system is composed of the following core modules:
 - Automated quality validation.
 - Comparative benchmarks against single-model LLM outputs.
 
-## 7. Operational Mandates
-- **Surgical Updates**: Maintain the integrity of the LangGraph state machine when modifying nodes.
-- **Mocking**: Always mock model provider responses in unit tests.
-- **Cost Awareness**: Include cost estimates in routing logic as defined in the Capability Registry.
+## 8. Image Generation Handling
+- **Local Storage**: All generated images are automatically downloaded and saved to the `outputs/` directory.
+- **Fallback Logic**: If no suitable image generation model is available (e.g., in free-only mode), the system will provide a "Professional Image Generation Prompt" block in the final output.
+- **Capability Routing**: Use the `image_generation` capability for text-to-image tasks.

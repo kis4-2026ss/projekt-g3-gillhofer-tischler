@@ -1,19 +1,21 @@
 [
     {
-        "model_id": "openrouter/baidu/cobuddy:free",
+        "model_id": "openrouter/owl-alpha",
         "capabilities": [
-            "coding",
-            "general"
+            "general",
+            "reasoning",
+            "coding"
         ],
         "cost_per_1k_tokens": 0.0,
         "latency_score": 6,
-        "description": "CoBuddy is a code generation model from Baidu, optimized for coding tasks and AI Agent workflows. It features high inference throughput and low end-to-end latency, with native support for tool..."
+        "description": "Owl Alpha is a high-performance foundation model designed for agentic workloads. Natively supports tool use, and long-context tasks, with strong performance in code generation, automated workflows, and complex instruction execution...."
     },
     {
         "model_id": "openrouter/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
         "capabilities": [
+            "general",
             "image",
-            "general"
+            "image_analysis"
         ],
         "cost_per_1k_tokens": 0.0,
         "latency_score": 6,
@@ -22,8 +24,8 @@
     {
         "model_id": "openrouter/poolside/laguna-xs.2:free",
         "capabilities": [
-            "reasoning",
-            "general"
+            "general",
+            "reasoning"
         ],
         "cost_per_1k_tokens": 0.0,
         "latency_score": 6,
@@ -32,8 +34,8 @@
     {
         "model_id": "openrouter/poolside/laguna-m.1:free",
         "capabilities": [
-            "reasoning",
-            "general"
+            "general",
+            "reasoning"
         ],
         "cost_per_1k_tokens": 0.0,
         "latency_score": 6,
@@ -49,10 +51,25 @@
         "description": "DeepSeek V4 Flash is an efficiency-optimized Mixture-of-Experts model from DeepSeek with 284B total parameters and 13B activated parameters, supporting a 1M-token context window. It is designed for fast inference and..."
     },
     {
+        "model_id": "openrouter/moonshotai/kimi-k2.6:free",
+        "capabilities": [
+            "coding",
+            "general",
+            "reasoning",
+            "image",
+            "image_analysis"
+        ],
+        "cost_per_1k_tokens": 0.0,
+        "latency_score": 6,
+        "description": "Kimi K2.6 is Moonshot AI's next-generation multimodal model, designed for long-horizon coding, coding-driven UI/UX generation, and multi-agent orchestration. It handles complex end-to-end coding tasks across Python, Rust, and Go, and..."
+    },
+    {
         "model_id": "openrouter/google/gemma-4-26b-a4b-it:free",
         "capabilities": [
+            "general",
             "reasoning",
-            "general"
+            "image",
+            "image_analysis"
         ],
         "cost_per_1k_tokens": 0.0,
         "latency_score": 6,
@@ -61,19 +78,42 @@
     {
         "model_id": "openrouter/google/gemma-4-31b-it:free",
         "capabilities": [
-            "image",
+            "general",
             "reasoning",
-            "general"
+            "image",
+            "image_analysis"
         ],
         "cost_per_1k_tokens": 0.0,
         "latency_score": 6,
         "description": "Gemma 4 31B Instruct is Google DeepMind's 30.7B dense multimodal model supporting text and image input with text output. Features a 256K token context window, configurable thinking/reasoning mode, native function..."
     },
     {
+        "model_id": "openrouter/google/lyria-3-pro-preview",
+        "capabilities": [
+            "general",
+            "image",
+            "image_analysis"
+        ],
+        "cost_per_1k_tokens": 0.0,
+        "latency_score": 6,
+        "description": "Full-length songs are priced at $0.08 per song. Lyria 3 is Google's family of music generation models, available through the Gemini API. With Lyria 3, you can generate high-quality, 48kHz..."
+    },
+    {
+        "model_id": "openrouter/google/lyria-3-clip-preview",
+        "capabilities": [
+            "general",
+            "image",
+            "image_analysis"
+        ],
+        "cost_per_1k_tokens": 0.0,
+        "latency_score": 6,
+        "description": "30 second duration clips are priced at $0.04 per clip. Lyria 3 is Google's family of music generation models, available through the Gemini API. With Lyria 3, you can generate..."
+    },
+    {
         "model_id": "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
         "capabilities": [
-            "reasoning",
-            "general"
+            "general",
+            "reasoning"
         ],
         "cost_per_1k_tokens": 0.0,
         "latency_score": 6,
@@ -82,19 +122,30 @@
     {
         "model_id": "openrouter/minimax/minimax-m2.5:free",
         "capabilities": [
-            "reasoning",
-            "general"
+            "general",
+            "reasoning"
         ],
         "cost_per_1k_tokens": 0.0,
         "latency_score": 6,
         "description": "MiniMax-M2.5 is a SOTA large language model designed for real-world productivity. Trained in a diverse range of complex real-world digital working environments, M2.5 builds upon the coding expertise of M2.1..."
     },
     {
+        "model_id": "openrouter/free",
+        "capabilities": [
+            "general",
+            "image",
+            "image_analysis"
+        ],
+        "cost_per_1k_tokens": 0.0,
+        "latency_score": 6,
+        "description": "The simplest way to get free inference. openrouter/free is a router that selects free models at random from the models available on OpenRouter. The router smartly filters for models that..."
+    },
+    {
         "model_id": "openrouter/liquid/lfm-2.5-1.2b-thinking:free",
         "capabilities": [
             "summarization",
-            "reasoning",
-            "general"
+            "general",
+            "reasoning"
         ],
         "cost_per_1k_tokens": 0.0,
         "latency_score": 4,
@@ -103,8 +154,8 @@
     {
         "model_id": "openrouter/liquid/lfm-2.5-1.2b-instruct:free",
         "capabilities": [
-            "reasoning",
-            "general"
+            "general",
+            "reasoning"
         ],
         "cost_per_1k_tokens": 0.0,
         "latency_score": 4,
@@ -113,8 +164,8 @@
     {
         "model_id": "openrouter/nvidia/nemotron-3-nano-30b-a3b:free",
         "capabilities": [
-            "coding",
-            "general"
+            "general",
+            "coding"
         ],
         "cost_per_1k_tokens": 0.0,
         "latency_score": 6,
@@ -123,9 +174,10 @@
     {
         "model_id": "openrouter/nvidia/nemotron-nano-12b-v2-vl:free",
         "capabilities": [
-            "image",
+            "general",
             "reasoning",
-            "general"
+            "image",
+            "image_analysis"
         ],
         "cost_per_1k_tokens": 0.0,
         "latency_score": 6,
@@ -134,10 +186,10 @@
     {
         "model_id": "openrouter/qwen/qwen3-next-80b-a3b-instruct:free",
         "capabilities": [
-            "coding",
-            "reasoning",
             "research",
-            "general"
+            "general",
+            "reasoning",
+            "coding"
         ],
         "cost_per_1k_tokens": 0.0,
         "latency_score": 6,
@@ -146,8 +198,8 @@
     {
         "model_id": "openrouter/nvidia/nemotron-nano-9b-v2:free",
         "capabilities": [
-            "reasoning",
-            "general"
+            "general",
+            "reasoning"
         ],
         "cost_per_1k_tokens": 0.0,
         "latency_score": 6,
@@ -156,8 +208,8 @@
     {
         "model_id": "openrouter/openai/gpt-oss-120b:free",
         "capabilities": [
-            "reasoning",
-            "general"
+            "general",
+            "reasoning"
         ],
         "cost_per_1k_tokens": 0.0,
         "latency_score": 6,
@@ -184,9 +236,9 @@
     {
         "model_id": "openrouter/qwen/qwen3-coder:free",
         "capabilities": [
-            "coding",
+            "general",
             "reasoning",
-            "general"
+            "coding"
         ],
         "cost_per_1k_tokens": 0.0,
         "latency_score": 6,
@@ -196,8 +248,8 @@
         "model_id": "openrouter/cognitivecomputations/dolphin-mistral-24b-venice-edition:free",
         "capabilities": [
             "creative",
-            "reasoning",
-            "general"
+            "general",
+            "reasoning"
         ],
         "cost_per_1k_tokens": 0.0,
         "latency_score": 4,
@@ -206,8 +258,8 @@
     {
         "model_id": "openrouter/meta-llama/llama-3.3-70b-instruct:free",
         "capabilities": [
-            "reasoning",
-            "general"
+            "general",
+            "reasoning"
         ],
         "cost_per_1k_tokens": 0.0,
         "latency_score": 6,
@@ -216,8 +268,8 @@
     {
         "model_id": "openrouter/meta-llama/llama-3.2-3b-instruct:free",
         "capabilities": [
-            "reasoning",
-            "general"
+            "general",
+            "reasoning"
         ],
         "cost_per_1k_tokens": 0.0,
         "latency_score": 6,
@@ -227,8 +279,8 @@
         "model_id": "openrouter/nousresearch/hermes-3-llama-3.1-405b:free",
         "capabilities": [
             "creative",
-            "reasoning",
-            "general"
+            "general",
+            "reasoning"
         ],
         "cost_per_1k_tokens": 0.0,
         "latency_score": 6,

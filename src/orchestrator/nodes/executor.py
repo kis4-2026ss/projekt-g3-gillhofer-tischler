@@ -1,6 +1,7 @@
 from ..state import State
 from ..utils import call_with_retry
 from .registry import registry
+import os
 
 # Errors that mean "this specific model is unusable" — rotate to a different model.
 _DEAD_MODEL_MARKERS = ("404", "not found", "no endpoints", "not a valid model", "does not exist")
@@ -33,18 +34,10 @@ def executor_node(state: State):
             current_model = _ensure_prefix(task.assigned_model)
             tried_models = [current_model]
 
-            is_image_task = any(cap in task.required_capabilities for cap in ["image", "image_generation"])
+            while True:
+                current_model = _ensure_prefix(current_model)
+                print(f"Executing task: {task.id} with model: {current_model}")
 
-            if is_image_task:
-                # No free model here can emit binary images, so ask for a vivid,
-                # generation-ready textual description instead of attempting bytes.
-                system_prompt = (
-                    "You are a specialized worker in an AI swarm. The system cannot output "
-                    "binary image files, so produce a vivid, richly detailed visual description "
-                    "(a generation-ready prompt) for the requested image. Do NOT ask clarifying "
-                    "questions and do NOT attempt to output image data."
-                )
-            else:
                 system_prompt = (
                     "You are a specialized worker in an AI swarm. "
                     "Your task is to execute the specific instruction provided. "
@@ -52,10 +45,8 @@ def executor_node(state: State):
                     f"Expected format: {task.expected_output or 'Provide the content requested.'}"
                 )
 
-            while True:
-                current_model = _ensure_prefix(current_model)
-                print(f"Executing task: {task.id} with model: {current_model}")
-
+                is_image_task = any(cap in task.required_capabilities for cap in ["image_generation"])
+                
                 try:
                     kwargs = {
                         "model": current_model,
@@ -64,13 +55,71 @@ def executor_node(state: State):
                             {"role": "user", "content": task.description},
                         ],
                     }
-                    response = call_with_retry(kwargs)
-                    task.result = response.choices[0].message.content
-                    task.status = "completed"
-                    task.assigned_model = current_model  # Record the model that actually worked
-                    print(f"  [SUCCESS] Completed task {task.id}")
-                    break
+                    
+                    # Only request image output if the model is supposed to support it
+                    # and it's an image generation task
+                    model_caps = []
+                    for m in registry.models:
+                        if m.model_id == current_model:
+                            model_caps = m.capabilities
+                            break
+                    
+                    if is_image_task and "image_generation" in model_caps:
+                        kwargs["modalities"] = ["image"]
+                    
+                    try:
+                        response = call_with_retry(kwargs)
+                    except Exception as e:
+                        # If image generation failed, try falling back to text if it was a multimodal request
+                        if is_image_task and "modalities" in kwargs:
+                            print(f"  [FALLBACK] Image generation failed for {current_model}. Requesting a detailed prompt instead...")
+                            del kwargs["modalities"]
+                            kwargs["messages"].append({
+                                "role": "user", 
+                                "content": "The image generation failed. Instead, provide a highly detailed, professional-grade prompt that I can use in Midjourney or DALL-E to generate this image. Include lighting, style, and composition details."
+                            })
+                            response = call_with_retry(kwargs)
+                        else:
+                            raise e
 
+                    # Handle multimodal response (images)
+                    content = response.choices[0].message.content
+                    
+                    # Check for image URLs in the response if it was an image task
+                    if is_image_task:
+                        import re
+                        import requests
+                        from pathlib import Path
+                        
+                        # Find URLs
+                        urls = re.findall(r'(https?://\S+\.(?:png|jpg|jpeg|gif|webp))', content)
+                        if not urls and hasattr(response, 'data') and response.data:
+                            # Some models return data in a different format
+                            for item in response.data:
+                                if hasattr(item, 'url'):
+                                    urls.append(item.url)
+                        
+                        for url in urls:
+                            try:
+                                img_data = requests.get(url).content
+                                filename = f"task_{task.id}_{os.path.basename(url.split('?')[0])}"
+                                if not any(ext in filename for ext in ['.png', '.jpg', '.jpeg']):
+                                    filename += ".png"
+                                output_path = Path("outputs") / filename
+                                with open(output_path, "wb") as f:
+                                    f.write(img_data)
+                                print(f"    [IMAGE SAVED] Saved image to {output_path}")
+                                content += f"\n\n[LOCAL IMAGE SAVED TO: {output_path}]"
+                            except Exception as img_err:
+                                print(f"    [IMAGE ERROR] Failed to save image from {url}: {img_err}")
+
+                    task.result = content
+                    task.status = "completed"
+                    task.assigned_model = current_model
+                    print(f"  [SUCCESS] Completed task {task.id}")
+                    print(f"    Result (first 100 chars): {content[:100]}...")
+                    break
+                    
                 except Exception as e:
                     err_str = str(e).lower()
 

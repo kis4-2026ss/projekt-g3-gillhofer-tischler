@@ -17,28 +17,41 @@ def update_free_models():
         free_models = []
         for model in all_models:
             model_id = model.get("id", "")
-            if model_id.endswith(":free"):
+            pricing = model.get("pricing", {})
+            
+            # Consider it free if it has the :free suffix OR if prompt/completion costs are zero
+            is_free_price = pricing.get("prompt") == "0" and pricing.get("completion") == "0"
+            
+            if model_id.endswith(":free") or is_free_price:
                 # Ensure the model ID starts with the provider prefix for LiteLLM
                 # OpenRouter models often need 'openrouter/' prefix explicitly
                 full_model_id = f"openrouter/{model_id}" if not model_id.startswith("openrouter/") else model_id
 
-                # Extract capabilities based on name and description
-
+                # Capability Detection
+                capabilities = ["general"]
                 description = model.get("description", "").lower()
                 name = model.get("name", "").lower()
                 
-                capabilities = ["general"]
+                arch = model.get("architecture", {})
+                input_mods = arch.get("input_modalities", [])
+                output_mods = arch.get("output_modalities", [])
+                modality = arch.get("modality", "").lower()
+
+                # Image Generation (Text to Image)
+                if "image" in output_mods or "->image" in modality or "image generation" in description or "generate image" in description:
+                    capabilities.append("image_generation")
                 
-                # Image Generation
-                if any(k in description or k in name for k in ["image", "generate image", "vision", "multimodal", "synthesis"]):
-                    capabilities.append("image")
+                # Image Analysis (Image to Text)
+                if "image" in input_mods or "image->" in modality or "vision" in description or "multimodal" in description or "visual" in description:
+                    capabilities.append("image_analysis")
+                    capabilities.append("image") # Backward compatibility
                 
                 # Coding
                 if any(k in description or k in name for k in ["code", "coder", "programming", "python", "javascript", "developer"]):
                     capabilities.append("coding")
                 
                 # Reasoning / Logic
-                if any(k in description or k in name for k in ["instruct", "chat", "reasoning", "logic", "math", "thinking", "complex"]):
+                if any(k in description or k in name for k in ["instruct", "chat", "reasoning", "logic", "math", "thinking", "complex", "reasoner"]):
                     capabilities.append("reasoning")
                 
                 # Research / Knowledge

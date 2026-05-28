@@ -47,11 +47,10 @@ def aggregator_node(state: State):
     Instructions:
     1.  Synthesize the information into a logical flow.
     2.  Ensure all parts of the user's request are addressed.
-    3.  PRESERVE concrete deliverables VERBATIM: include any code inside fenced ```code``` blocks, and keep formulas, data, and structured lists intact. Never summarize, paraphrase, or omit code or technical artifacts.
-    4.  Remove only true duplication or contradictions between subtasks — never drop a unique deliverable.
-    5.  Maintain a professional and helpful tone.
-    6.  The final output should be the complete answer to the user, not a description of the tasks.
-
+    3.  Remove any redundant information or conflicting statements.
+    4.  Maintain a professional and helpful tone.
+    5.  The final output should be the complete answer to the user, not a summary of the tasks.
+    
     Final Synthesized Response:
     """
     

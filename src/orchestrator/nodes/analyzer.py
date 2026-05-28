@@ -1,6 +1,7 @@
 from ..state import State, SubTask
 import os
 from ..utils import call_with_retry, get_main_model
+from .registry import registry
 from typing import List
 import json
 
@@ -18,21 +19,33 @@ def analyzer_node(state: State):
     
     model = get_main_model()
     
+    # Get available capabilities from registry
+    all_caps = set()
+    for m in registry.models:
+        all_caps.update(m.capabilities)
+    available_capabilities = ", ".join(sorted(list(all_caps)))
+    
     prompt = f"""
     You are an expert task analyzer and decomposer. Your goal is to interpret a complex user request, identify the core intent, and break it down into smaller, manageable subtasks.
     
     User Request: {user_input}
     
+    Available model capabilities in this system: {available_capabilities}
+    
     Step 1: Analyze the overall intent and complexity (1-10).
     Step 2: Decompose the task into a logical sequence of subtasks.
     
-    IMPORTANT: Be efficient. If a task is simple (like generating a single image or answering a quick question), use only ONE subtask. Only decompose truly complex requests that require multiple distinct steps (e.g., research THEN summarize THEN generate image).
+    IMPORTANT: Be efficient. 
+    - If a task is simple (like generating a single image or answering a quick question), use only ONE subtask. 
+    - For image generation requests, use exactly ONE subtask with 'image_generation' capability IF it is in the available capabilities list. If 'image_generation' is NOT available, but 'image' or 'image_analysis' is, you may use those for image-related tasks, but be aware they may only provide textual descriptions of images.
+    - If you cannot fulfill a request with the available capabilities, do your best with 'reasoning' and 'general' capabilities to provide a helpful textual response.
+    - Only decompose truly complex requests that require multiple distinct steps (e.g., research THEN summarize THEN generate image).
     
     For each subtask, provide:
     - id: A unique string identifier.
     - description: A clear, actionable instruction.
     - expected_output: What the result of this subtask should look like.
-    - required_capabilities: A list of capabilities needed. Use ONLY these exact values: 'general', 'coding', 'reasoning', 'research', 'summarization', 'creative', 'image'. For any request to draw/generate/create a picture, use 'image'.
+    - required_capabilities: A list of capabilities needed. Choose from the available list: {available_capabilities}.
     - priority: An integer (1 for highest priority, larger for lower).
     - dependencies: A list of 'id's of subtasks that must be completed BEFORE this one.
     

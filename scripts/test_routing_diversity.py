@@ -29,7 +29,11 @@ def test_diverse_routing():
         },
         {
             "name": "Image Generation",
-            "capabilities": ["image"]
+            "capabilities": ["image_generation"]
+        },
+        {
+            "name": "Image Analysis",
+            "capabilities": ["image_analysis"]
         }
     ]
 
