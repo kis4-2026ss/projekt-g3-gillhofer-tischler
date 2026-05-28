@@ -37,7 +37,8 @@ The system is built on **LangGraph** and uses a **State-Machine** approach to ma
 
 ## 📂 Project Structure
 
-*   `main.py`: The entry point for the application.
+*   `app.py`: The Streamlit graphical interface (chat-style, live progress).
+*   `main.py`: The command-line entry point for the application.
 *   `src/orchestrator/graph.py`: The core LangGraph orchestration logic.
 *   `src/orchestrator/nodes/`: Specialized logic for each phase (Analyzer, Router, Executor, Verifier, Aggregator, Validator).
 *   `src/orchestrator/nodes/registry.py`: The intelligence engine that selects models based on quality benchmarks.
@@ -48,11 +49,18 @@ The system is built on **LangGraph** and uses a **State-Machine** approach to ma
 
 1.  **Requirements**: Python 3.10+, LiteLLM, LangGraph.
 2.  **Environment**: Add your `OPENROUTER_API_KEY` to a `.env` file.
-3.  **Run**:
+3.  **Run the GUI** (recommended):
+    ```bash
+    streamlit run app.py
+    ```
+    A browser tab opens where you can type a problem, watch the pipeline run
+    stage-by-stage, and keep refining or asking new problems in the same session.
+
+4.  **Or run from the command line**:
     ```bash
     python main.py "Your complex request here"
     ```
-4.  **Update Models**:
+5.  **Update Models**:
     ```bash
     python scripts/update_free_models.py
     ```
