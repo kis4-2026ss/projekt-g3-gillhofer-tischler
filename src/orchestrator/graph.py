@@ -4,6 +4,7 @@ from .state import State
 from .nodes.analyzer import analyzer_node
 from .nodes.router import router_node
 from .nodes.executor import subtask_worker
+from .nodes.verifier import verifier_node
 from .nodes.aggregator import aggregator_node
 from .nodes.validator import validator_node
 
@@ -52,6 +53,7 @@ def create_orchestrator():
     workflow.add_node("analyzer", analyzer_node)
     workflow.add_node("router", router_node)
     workflow.add_node("executor", subtask_worker)
+    workflow.add_node("verifier", verifier_node)
     workflow.add_node("aggregator", aggregator_node)
     workflow.add_node("validator", validator_node)
 
@@ -69,8 +71,9 @@ def create_orchestrator():
         }
     )
     
-    # All executor instances fan in to the aggregator
-    workflow.add_edge("executor", "aggregator")
+    # All executor instances fan in to the verifier
+    workflow.add_edge("executor", "verifier")
+    workflow.add_edge("verifier", "aggregator")
     
     workflow.add_edge("aggregator", "validator")
     

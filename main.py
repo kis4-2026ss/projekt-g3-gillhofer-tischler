@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-DEFAULT_PROBLEM = "Research the top 2 free AI models for coding, summarize their main features, and generate a creative prompt to test them."
+DEFAULT_PROBLEM = "Write a Python function to calculate the Fibonacci sequence and explain how it works."
 
 def get_user_input(argv):
     """Problem text from CLI args (quoted or not); falls back to the default."""

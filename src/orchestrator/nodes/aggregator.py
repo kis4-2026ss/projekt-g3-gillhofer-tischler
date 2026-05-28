@@ -68,6 +68,16 @@ def aggregator_node(state: State):
         }
         response = call_with_retry(kwargs)
         final_output = response.choices[0].message.content
+        
+        # Add Orchestrator Insights
+        insights = ["\n\n--- 🤖 ORCHESTRATOR INSIGHTS ---"]
+        for task in subtask_list:
+            model_name = task.assigned_model.split("/")[-1] if task.assigned_model else "Unknown"
+            status_emoji = "✅" if task.status == "completed" else "❌"
+            insights.append(f"{status_emoji} **{task.id}**: `{model_name}` was selected for its high proficiency in: {', '.join(task.required_capabilities)}")
+        
+        final_output += "\n".join(insights)
+
         if had_image_task:
             final_output += image_note
         print(f"Aggregation complete. Length: {len(final_output)} characters.")

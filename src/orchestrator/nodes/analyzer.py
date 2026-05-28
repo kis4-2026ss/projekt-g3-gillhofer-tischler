@@ -35,11 +35,12 @@ def analyzer_node(state: State):
     Step 1: Analyze the overall intent and complexity (1-10).
     Step 2: Decompose the task into a logical sequence of subtasks.
     
-    IMPORTANT: Be efficient. 
-    - If a task is simple (like generating a single image or answering a quick question), use only ONE subtask. 
-    - For image generation requests, use exactly ONE subtask with 'image_generation' capability IF it is in the available capabilities list. If 'image_generation' is NOT available, but 'image' or 'image_analysis' is, you may use those for image-related tasks, but be aware they may only provide textual descriptions of images.
-    - If you cannot fulfill a request with the available capabilities, do your best with 'reasoning' and 'general' capabilities to provide a helpful textual response.
-    - Only decompose truly complex requests that require multiple distinct steps (e.g., research THEN summarize THEN generate image).
+    IMPORTANT: Be efficient but thorough. 
+    - If a task is simple (like a quick question), use only ONE subtask. 
+    - For 'Research' requests, prioritize a 'Deep Research' pattern: Decompose into 1. Data Collection (finding facts), 2. Synthesis/Analysis (connecting the dots), and 3. Verification/Fact-Checking.
+    - For image generation requests, use exactly ONE subtask with 'image_generation' capability IF available.
+    - If you cannot fulfill a request with the available capabilities, do your best with 'reasoning' and 'general' capabilities.
+    - Use the 'coding' capability for any task requiring code generation.
     
     For each subtask, provide:
     - id: A unique string identifier.
