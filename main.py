@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-DEFAULT_PROBLEM = "generate the image of a realistic, playful, cute cat."
+DEFAULT_PROBLEM = "Research the top 2 free AI models for coding, summarize their main features, and generate a creative prompt to test them."
 
 def get_user_input(argv):
     """Problem text from CLI args (quoted or not); falls back to the default."""
@@ -18,7 +18,7 @@ def main():
 
     initial_state = {
         "user_input": user_input,
-        "subtasks": [],
+        "subtasks": {},
         "final_output": None,
         "metadata": {},
         "retry_count": 0

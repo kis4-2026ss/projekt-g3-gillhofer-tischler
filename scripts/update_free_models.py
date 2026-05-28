@@ -70,6 +70,25 @@ def update_free_models():
                 if any(k in description or k in name for k in ["complex-logic", "mathematical", "technical"]):
                     capabilities.append("complex-logic")
                 
+                # Quality Score Estimation (Initial heuristics)
+                reasoning_score = 5
+                coding_score = 5
+                creativity_score = 5
+                
+                # Reasoning boosts
+                if any(k in description or k in name for k in ["reasoning", "logic", "thinking", "instruct", "math", "complex"]):
+                    reasoning_score += 2
+                if "reasoner" in name or "omni" in name or "v4" in name:
+                    reasoning_score += 1
+                
+                # Coding boosts
+                if any(k in description or k in name for k in ["code", "coder", "programming", "python", "javascript", "developer"]):
+                    coding_score += 3
+                
+                # Creativity boosts
+                if any(k in description or k in name for k in ["creative", "writing", "story", "roleplay", "fiction", "uncensored", "dolphin", "venice"]):
+                    creativity_score += 3
+
                 # Simple latency score based on context length (proxy for model size/speed)
                 context_length = model.get("context_length", 0)
                 if context_length > 100000:
@@ -84,6 +103,9 @@ def update_free_models():
                     "capabilities": list(set(capabilities)),
                     "cost_per_1k_tokens": 0.0,
                     "latency_score": latency_score,
+                    "reasoning_score": min(reasoning_score, 10),
+                    "coding_score": min(coding_score, 10),
+                    "creativity_score": min(creativity_score, 10),
                     "description": model.get("description", "No description available.")
                 })
         

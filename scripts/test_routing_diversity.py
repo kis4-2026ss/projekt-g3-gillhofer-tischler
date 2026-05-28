@@ -37,8 +37,8 @@ def test_diverse_routing():
         }
     ]
 
-    print(f"{'Scenario':<25} | {'Assigned Model':<50} | {'Match Score'}")
-    print("-" * 90)
+    print(f"{'Scenario':<25} | {'Assigned Model':<50} | {'Score'}")
+    print("-" * 95)
 
     for scenario in test_scenarios:
         best_model = registry.get_best_model(scenario["capabilities"])
@@ -49,7 +49,15 @@ def test_diverse_routing():
             match_count = sum(1 for cap in scenario["capabilities"] if cap in model.capabilities)
             if match_count > 0 or not scenario["capabilities"]:
                 missing_count = len(scenario["capabilities"]) - match_count
-                score = model.latency_score + (missing_count * 5)
+                score = model.latency_score + (missing_count * 10)
+                
+                quality_bonus = 0
+                for cap in scenario["capabilities"]:
+                    if cap == "reasoning": quality_bonus += model.reasoning_score
+                    if cap == "coding": quality_bonus += model.coding_score
+                    if cap == "creative": quality_bonus += model.creativity_score
+                
+                score -= (quality_bonus * 0.5)
                 scored_models.append((model.model_id, score))
         
         scored_models.sort(key=lambda x: x[1])

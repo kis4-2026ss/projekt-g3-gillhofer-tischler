@@ -1,4 +1,5 @@
-from typing import List, Optional, TypedDict
+from typing import List, Optional, TypedDict, Annotated, Dict
+import operator
 from pydantic import BaseModel, Field
 
 class SubTask(BaseModel):
@@ -14,9 +15,8 @@ class SubTask(BaseModel):
 
 class State(TypedDict):
     user_input: str
-    # Plain list channel (overwrite semantics): every node returns the full updated
-    # list, so concatenation would duplicate subtasks each step.
-    subtasks: List[SubTask]
+    # Use a dictionary with operator.ior (dictionary merge) to allow parallel updates by ID
+    subtasks: Annotated[Dict[str, SubTask], operator.ior]
     final_output: Optional[str]
-    metadata: dict
+    metadata: Annotated[dict, operator.ior]
     retry_count: int

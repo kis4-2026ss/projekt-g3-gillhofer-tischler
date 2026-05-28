@@ -8,8 +8,10 @@ def validator_node(state: State):
     """
     final_output = state.get("final_output")
     user_input = state.get("user_input")
-    subtasks = state.get("subtasks", [])
+    subtasks = state.get("subtasks", {})
     metadata = state.get("metadata", {})
+
+    subtask_list = list(subtasks.values()) if isinstance(subtasks, dict) else subtasks
 
     if not final_output:
         print("--- Validator: No output to validate ---")
@@ -17,7 +19,7 @@ def validator_node(state: State):
 
     # If no subtask actually produced output, the run failed — don't ask the LLM to
     # grade a failure message, just mark it invalid.
-    completed = [t for t in subtasks if t.status == "completed" and t.result]
+    completed = [t for t in subtask_list if t.status == "completed" and t.result]
     if not completed or metadata.get("execution_failed"):
         print("--- Validator: No successful subtasks; marking invalid ---")
         metadata["validation"] = {
@@ -34,7 +36,7 @@ def validator_node(state: State):
     model = get_main_model()
 
     # Prepare a summary of subtasks for context
-    subtask_summary = "\n".join([f"- {t.id}: {t.description} (Status: {t.status})" for t in subtasks])
+    subtask_summary = "\n".join([f"- {t.id}: {t.description} (Status: {t.status})" for t in subtask_list])
 
     prompt = f"""
     You are a Quality Validator for an AI Orchestrator. Your goal is to review the final output of the system and ensure it meets high standards.

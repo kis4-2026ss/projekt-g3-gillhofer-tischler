@@ -54,7 +54,10 @@ class ModelCapability(BaseModel):
     model_id: str
     capabilities: List[str]
     cost_per_1k_tokens: float = 0.0
-    latency_score: int
+    latency_score: int # 1-10, lower is faster
+    reasoning_score: int = 5 # 1-10, higher is better
+    coding_score: int = 5 # 1-10, higher is better
+    creativity_score: int = 5 # 1-10, higher is better
     description: str
 
 class CapabilityRegistry:
@@ -83,13 +86,16 @@ class CapabilityRegistry:
                     model_id="openrouter/google/gemini-2.0-flash-lite-preview-02-05:free",
                     capabilities=["general", "reasoning", "research"],
                     latency_score=2,
+                    reasoning_score=8,
+                    coding_score=7,
+                    creativity_score=6,
                     description="Fallback free model"
                 )
             ]
 
     def get_best_model(self, required_capabilities: List[str], exclude_models: List[str] = None) -> str:
         """
-        Selects the best free model based on capabilities and latency.
+        Selects the best free model based on capabilities and performance scores.
         Allows excluding specific models (e.g., if they are rate-limited or dead).
         """
         exclude_models = exclude_models or []
@@ -104,10 +110,23 @@ class CapabilityRegistry:
             match_count = sum(1 for cap in required_capabilities if cap in model.capabilities)
 
             if match_count > 0 or not required_capabilities:
-                # Score = Latency + (Penalty for missing capabilities)
-                # Lower score is better
+                # Base score from latency (lower is better)
+                # Weighted penalty for missing capabilities
                 missing_count = len(required_capabilities) - match_count
-                score = model.latency_score + (missing_count * 5)
+                score = model.latency_score + (missing_count * 10)
+                
+                # Quality Boost: Subtract quality scores from the "badness" score
+                # This makes high-quality models more attractive even if slightly slower
+                quality_bonus = 0
+                if "reasoning" in required_capabilities:
+                    quality_bonus += model.reasoning_score
+                if "coding" in required_capabilities:
+                    quality_bonus += model.coding_score
+                if "creative" in required_capabilities:
+                    quality_bonus += model.creativity_score
+                
+                # Scale quality bonus to have meaningful impact (0-10 -> 0-5)
+                score -= (quality_bonus * 0.5)
 
                 # Tie-breaker: prefer models with fewer TOTAL capabilities (specialized)
                 scored_models.append((model.model_id, score, len(model.capabilities)))

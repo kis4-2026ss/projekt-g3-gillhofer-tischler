@@ -101,7 +101,7 @@ def analyzer_node(state: State):
         if not tasks_data and isinstance(data, list):
             tasks_data = data
             
-        subtasks = [SubTask(**task) for task in tasks_data]
+        subtasks = {task["id"]: SubTask(**task) for task in tasks_data}
         
         # Log metadata
         metadata = state.get("metadata", {})
@@ -114,10 +114,10 @@ def analyzer_node(state: State):
         print(f"\n[ANALYZER] Intent: {metadata['intent']}")
         print(f"[ANALYZER] Complexity: {metadata['complexity']}/10")
         print(f"[ANALYZER] Subtasks Created ({len(subtasks)}):")
-        for i, task in enumerate(subtasks):
+        for task_id, task in subtasks.items():
             deps = f" (depends on: {', '.join(task.dependencies)})" if task.dependencies else ""
             caps = f" [Capabilities: {', '.join(task.required_capabilities)}]" if task.required_capabilities else ""
-            print(f"  {i+1}. [{task.id}] {task.description}{deps}{caps}")
+            print(f"  - [{task_id}] {task.description}{deps}{caps}")
         print("-" * 50 + "\n")
         
         return {"subtasks": subtasks, "metadata": metadata, "retry_count": retry_count + 1}
@@ -125,12 +125,13 @@ def analyzer_node(state: State):
     except Exception as e:
         print(f"Error parsing decomposition: {e}")
         # Fallback to a single subtask if parsing fails
+        fallback_id = "fallback_1"
         fallback_task = SubTask(
-            id="fallback_1", 
+            id=fallback_id, 
             description=f"Process the user request: {user_input}",
             expected_output="Final result for the user request.",
             required_capabilities=["reasoning"],
             priority=1,
             dependencies=[]
         )
-        return {"subtasks": [fallback_task], "retry_count": retry_count + 1}
+        return {"subtasks": {fallback_id: fallback_task}, "retry_count": retry_count + 1}
