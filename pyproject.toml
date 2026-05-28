@@ -1,0 +1,26 @@
+[project]
+name = "ai-meta-orchestrator"
+version = "0.1.0"
+description = "AI Meta-Orchestrator for Multi-Model Task Routing"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "langgraph>=0.0.39",
+    "langchain>=0.1.0",
+    "langchain-openai>=0.0.2",
+    "litellm>=1.0.0",
+    "pydantic>=2.0.0",
+    "python-dotenv>=1.0.0",
+    "streamlit>=1.30.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "black>=23.0.0",
+    "isort>=5.12.0",
+]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"

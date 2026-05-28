@@ -1,0 +1,370 @@
+[
+    {
+        "model_id": "openrouter/owl-alpha",
+        "capabilities": [
+            "coding",
+            "general",
+            "reasoning"
+        ],
+        "cost_per_1k_tokens": 0.0,
+        "latency_score": 6,
+        "reasoning_score": 7,
+        "coding_score": 8,
+        "creativity_score": 5,
+        "description": "Owl Alpha is a high-performance foundation model designed for agentic workloads. Natively supports tool use, and long-context tasks, with strong performance in code generation, automated workflows, and complex instruction execution...."
+    },
+    {
+        "model_id": "openrouter/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
+        "capabilities": [
+            "general",
+            "image",
+            "image_analysis"
+        ],
+        "cost_per_1k_tokens": 0.0,
+        "latency_score": 6,
+        "reasoning_score": 6,
+        "coding_score": 5,
+        "creativity_score": 5,
+        "description": "NVIDIA Nemotron\u2122 3 Nano Omni is a 30B-A3B open multimodal model designed to function as a perception and context sub-agent in enterprise agent systems. It accepts text, image, video, and..."
+    },
+    {
+        "model_id": "openrouter/poolside/laguna-xs.2:free",
+        "capabilities": [
+            "general",
+            "reasoning"
+        ],
+        "cost_per_1k_tokens": 0.0,
+        "latency_score": 6,
+        "reasoning_score": 7,
+        "coding_score": 5,
+        "creativity_score": 5,
+        "description": "Laguna XS.2 is the second-generation model in the XS size class from [Poolside](https://poolside.ai), their efficient coding agent series. It combines tool calling and reasoning capabilities with a compact footprint, offering..."
+    },
+    {
+        "model_id": "openrouter/poolside/laguna-m.1:free",
+        "capabilities": [
+            "general",
+            "reasoning"
+        ],
+        "cost_per_1k_tokens": 0.0,
+        "latency_score": 6,
+        "reasoning_score": 7,
+        "coding_score": 5,
+        "creativity_score": 5,
+        "description": "Laguna M.1 is the flagship coding agent model from [Poolside](https://poolside.ai), optimized for complex software engineering tasks. Designed for agentic coding workflows, it supports tool calling and reasoning, with a 128K..."
+    },
+    {
+        "model_id": "openrouter/deepseek/deepseek-v4-flash:free",
+        "capabilities": [
+            "general"
+        ],
+        "cost_per_1k_tokens": 0.0,
+        "latency_score": 6,
+        "reasoning_score": 6,
+        "coding_score": 5,
+        "creativity_score": 5,
+        "description": "DeepSeek V4 Flash is an efficiency-optimized Mixture-of-Experts model from DeepSeek with 284B total parameters and 13B activated parameters, supporting a 1M-token context window. It is designed for fast inference and..."
+    },
+    {
+        "model_id": "openrouter/moonshotai/kimi-k2.6:free",
+        "capabilities": [
+            "general",
+            "image_analysis",
+            "coding",
+            "image",
+            "reasoning"
+        ],
+        "cost_per_1k_tokens": 0.0,
+        "latency_score": 6,
+        "reasoning_score": 7,
+        "coding_score": 8,
+        "creativity_score": 5,
+        "description": "Kimi K2.6 is Moonshot AI's next-generation multimodal model, designed for long-horizon coding, coding-driven UI/UX generation, and multi-agent orchestration. It handles complex end-to-end coding tasks across Python, Rust, and Go, and..."
+    },
+    {
+        "model_id": "openrouter/google/gemma-4-26b-a4b-it:free",
+        "capabilities": [
+            "general",
+            "image",
+            "reasoning",
+            "image_analysis"
+        ],
+        "cost_per_1k_tokens": 0.0,
+        "latency_score": 6,
+        "reasoning_score": 7,
+        "coding_score": 5,
+        "creativity_score": 5,
+        "description": "Gemma 4 26B A4B IT is an instruction-tuned Mixture-of-Experts (MoE) model from Google DeepMind. Despite 25.2B total parameters, only 3.8B activate per token during inference \u2014 delivering near-31B quality at..."
+    },
+    {
+        "model_id": "openrouter/google/gemma-4-31b-it:free",
+        "capabilities": [
+            "general",
+            "image",
+            "reasoning",
+            "image_analysis"
+        ],
+        "cost_per_1k_tokens": 0.0,
+        "latency_score": 6,
+        "reasoning_score": 7,
+        "coding_score": 5,
+        "creativity_score": 5,
+        "description": "Gemma 4 31B Instruct is Google DeepMind's 30.7B dense multimodal model supporting text and image input with text output. Features a 256K token context window, configurable thinking/reasoning mode, native function..."
+    },
+    {
+        "model_id": "openrouter/google/lyria-3-pro-preview",
+        "capabilities": [
+            "general",
+            "image",
+            "image_analysis"
+        ],
+        "cost_per_1k_tokens": 0.0,
+        "latency_score": 6,
+        "reasoning_score": 5,
+        "coding_score": 5,
+        "creativity_score": 5,
+        "description": "Full-length songs are priced at $0.08 per song. Lyria 3 is Google's family of music generation models, available through the Gemini API. With Lyria 3, you can generate high-quality, 48kHz..."
+    },
+    {
+        "model_id": "openrouter/google/lyria-3-clip-preview",
+        "capabilities": [
+            "general",
+            "image",
+            "image_analysis"
+        ],
+        "cost_per_1k_tokens": 0.0,
+        "latency_score": 6,
+        "reasoning_score": 5,
+        "coding_score": 5,
+        "creativity_score": 5,
+        "description": "30 second duration clips are priced at $0.04 per clip. Lyria 3 is Google's family of music generation models, available through the Gemini API. With Lyria 3, you can generate..."
+    },
+    {
+        "model_id": "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
+        "capabilities": [
+            "general",
+            "reasoning"
+        ],
+        "cost_per_1k_tokens": 0.0,
+        "latency_score": 6,
+        "reasoning_score": 7,
+        "coding_score": 5,
+        "creativity_score": 5,
+        "description": "NVIDIA Nemotron 3 Super is a 120B-parameter open hybrid MoE model, activating just 12B parameters for maximum compute efficiency and accuracy in complex multi-agent applications. Built on a hybrid Mamba-Transformer..."
+    },
+    {
+        "model_id": "openrouter/minimax/minimax-m2.5:free",
+        "capabilities": [
+            "general",
+            "reasoning"
+        ],
+        "cost_per_1k_tokens": 0.0,
+        "latency_score": 6,
+        "reasoning_score": 7,
+        "coding_score": 5,
+        "creativity_score": 5,
+        "description": "MiniMax-M2.5 is a SOTA large language model designed for real-world productivity. Trained in a diverse range of complex real-world digital working environments, M2.5 builds upon the coding expertise of M2.1..."
+    },
+    {
+        "model_id": "openrouter/free",
+        "capabilities": [
+            "general",
+            "image",
+            "image_analysis"
+        ],
+        "cost_per_1k_tokens": 0.0,
+        "latency_score": 6,
+        "reasoning_score": 5,
+        "coding_score": 5,
+        "creativity_score": 5,
+        "description": "The simplest way to get free inference. openrouter/free is a router that selects free models at random from the models available on OpenRouter. The router smartly filters for models that..."
+    },
+    {
+        "model_id": "openrouter/liquid/lfm-2.5-1.2b-thinking:free",
+        "capabilities": [
+            "general",
+            "reasoning",
+            "summarization"
+        ],
+        "cost_per_1k_tokens": 0.0,
+        "latency_score": 4,
+        "reasoning_score": 7,
+        "coding_score": 5,
+        "creativity_score": 5,
+        "description": "LFM2.5-1.2B-Thinking is a lightweight reasoning-focused model optimized for agentic tasks, data extraction, and RAG\u2014while still running comfortably on edge devices. It supports long context (up to 32K tokens) and is..."
+    },
+    {
+        "model_id": "openrouter/liquid/lfm-2.5-1.2b-instruct:free",
+        "capabilities": [
+            "general",
+            "reasoning"
+        ],
+        "cost_per_1k_tokens": 0.0,
+        "latency_score": 4,
+        "reasoning_score": 7,
+        "coding_score": 5,
+        "creativity_score": 5,
+        "description": "LFM2.5-1.2B-Instruct is a compact, high-performance instruction-tuned model built for fast on-device AI. It delivers strong chat quality in a 1.2B parameter footprint, with efficient edge inference and broad runtime support."
+    },
+    {
+        "model_id": "openrouter/nvidia/nemotron-3-nano-30b-a3b:free",
+        "capabilities": [
+            "coding",
+            "general"
+        ],
+        "cost_per_1k_tokens": 0.0,
+        "latency_score": 6,
+        "reasoning_score": 5,
+        "coding_score": 8,
+        "creativity_score": 5,
+        "description": "NVIDIA Nemotron 3 Nano 30B A3B is a small language MoE model with highest compute efficiency and accuracy for developers to build specialized agentic AI systems. The model is fully..."
+    },
+    {
+        "model_id": "openrouter/nvidia/nemotron-nano-12b-v2-vl:free",
+        "capabilities": [
+            "general",
+            "image",
+            "reasoning",
+            "image_analysis"
+        ],
+        "cost_per_1k_tokens": 0.0,
+        "latency_score": 6,
+        "reasoning_score": 7,
+        "coding_score": 5,
+        "creativity_score": 5,
+        "description": "NVIDIA Nemotron Nano 2 VL is a 12-billion-parameter open multimodal reasoning model designed for video understanding and document intelligence. It introduces a hybrid Transformer-Mamba architecture, combining transformer-level accuracy with Mamba\u2019s..."
+    },
+    {
+        "model_id": "openrouter/qwen/qwen3-next-80b-a3b-instruct:free",
+        "capabilities": [
+            "coding",
+            "general",
+            "research",
+            "reasoning"
+        ],
+        "cost_per_1k_tokens": 0.0,
+        "latency_score": 6,
+        "reasoning_score": 7,
+        "coding_score": 8,
+        "creativity_score": 5,
+        "description": "Qwen3-Next-80B-A3B-Instruct is an instruction-tuned chat model in the Qwen3-Next series optimized for fast, stable responses without \u201cthinking\u201d traces. It targets complex tasks across reasoning, code generation, knowledge QA, and multilingual..."
+    },
+    {
+        "model_id": "openrouter/nvidia/nemotron-nano-9b-v2:free",
+        "capabilities": [
+            "general",
+            "reasoning"
+        ],
+        "cost_per_1k_tokens": 0.0,
+        "latency_score": 6,
+        "reasoning_score": 7,
+        "coding_score": 5,
+        "creativity_score": 5,
+        "description": "NVIDIA-Nemotron-Nano-9B-v2 is a large language model (LLM) trained from scratch by NVIDIA, and designed as a unified model for both reasoning and non-reasoning tasks. It responds to user queries and..."
+    },
+    {
+        "model_id": "openrouter/openai/gpt-oss-120b:free",
+        "capabilities": [
+            "general",
+            "reasoning"
+        ],
+        "cost_per_1k_tokens": 0.0,
+        "latency_score": 6,
+        "reasoning_score": 7,
+        "coding_score": 5,
+        "creativity_score": 5,
+        "description": "gpt-oss-120b is an open-weight, 117B-parameter Mixture-of-Experts (MoE) language model from OpenAI designed for high-reasoning, agentic, and general-purpose production use cases. It activates 5.1B parameters per forward pass and is optimized..."
+    },
+    {
+        "model_id": "openrouter/openai/gpt-oss-20b:free",
+        "capabilities": [
+            "general"
+        ],
+        "cost_per_1k_tokens": 0.0,
+        "latency_score": 6,
+        "reasoning_score": 5,
+        "coding_score": 5,
+        "creativity_score": 5,
+        "description": "gpt-oss-20b is an open-weight 21B parameter model released by OpenAI under the Apache 2.0 license. It uses a Mixture-of-Experts (MoE) architecture with 3.6B active parameters per forward pass, optimized for..."
+    },
+    {
+        "model_id": "openrouter/z-ai/glm-4.5-air:free",
+        "capabilities": [
+            "general"
+        ],
+        "cost_per_1k_tokens": 0.0,
+        "latency_score": 6,
+        "reasoning_score": 5,
+        "coding_score": 5,
+        "creativity_score": 5,
+        "description": "GLM-4.5-Air is the lightweight variant of our latest flagship model family, also purpose-built for agent-centric applications. Like GLM-4.5, it adopts the Mixture-of-Experts (MoE) architecture but with a more compact parameter..."
+    },
+    {
+        "model_id": "openrouter/qwen/qwen3-coder:free",
+        "capabilities": [
+            "coding",
+            "general",
+            "reasoning"
+        ],
+        "cost_per_1k_tokens": 0.0,
+        "latency_score": 6,
+        "reasoning_score": 7,
+        "coding_score": 8,
+        "creativity_score": 5,
+        "description": "Qwen3-Coder-480B-A35B-Instruct is a Mixture-of-Experts (MoE) code generation model developed by the Qwen team. It is optimized for agentic coding tasks such as function calling, tool use, and long-context reasoning over..."
+    },
+    {
+        "model_id": "openrouter/cognitivecomputations/dolphin-mistral-24b-venice-edition:free",
+        "capabilities": [
+            "general",
+            "creative",
+            "reasoning"
+        ],
+        "cost_per_1k_tokens": 0.0,
+        "latency_score": 4,
+        "reasoning_score": 7,
+        "coding_score": 5,
+        "creativity_score": 8,
+        "description": "Venice Uncensored Dolphin Mistral 24B Venice Edition is a fine-tuned variant of Mistral-Small-24B-Instruct-2501, developed by dphn.ai in collaboration with Venice.ai. This model is designed as an \u201cuncensored\u201d instruct-tuned LLM, preserving..."
+    },
+    {
+        "model_id": "openrouter/meta-llama/llama-3.3-70b-instruct:free",
+        "capabilities": [
+            "general",
+            "reasoning"
+        ],
+        "cost_per_1k_tokens": 0.0,
+        "latency_score": 6,
+        "reasoning_score": 7,
+        "coding_score": 5,
+        "creativity_score": 5,
+        "description": "The Meta Llama 3.3 multilingual large language model (LLM) is a pretrained and instruction tuned generative model in 70B (text in/text out). The Llama 3.3 instruction tuned text only model..."
+    },
+    {
+        "model_id": "openrouter/meta-llama/llama-3.2-3b-instruct:free",
+        "capabilities": [
+            "general",
+            "reasoning"
+        ],
+        "cost_per_1k_tokens": 0.0,
+        "latency_score": 6,
+        "reasoning_score": 7,
+        "coding_score": 5,
+        "creativity_score": 5,
+        "description": "Llama 3.2 3B is a 3-billion-parameter multilingual large language model, optimized for advanced natural language processing tasks like dialogue generation, reasoning, and summarization. Designed with the latest transformer architecture, it..."
+    },
+    {
+        "model_id": "openrouter/nousresearch/hermes-3-llama-3.1-405b:free",
+        "capabilities": [
+            "general",
+            "creative",
+            "reasoning"
+        ],
+        "cost_per_1k_tokens": 0.0,
+        "latency_score": 6,
+        "reasoning_score": 7,
+        "coding_score": 5,
+        "creativity_score": 8,
+        "description": "Hermes 3 is a generalist language model with many improvements over Hermes 2, including advanced agentic capabilities, much better roleplaying, reasoning, multi-turn conversation, long context coherence, and improvements across the..."
+    }
+]

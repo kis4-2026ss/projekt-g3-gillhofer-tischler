@@ -1,0 +1,26 @@
+[
+  {
+    "id": "rust_vs_go",
+    "prompt": "Compare Rust and Go for building a high-throughput backend web service. Cover performance, concurrency model, ecosystem maturity, and developer hiring. Then give a concrete recommendation for a 5-person startup, and finally propose a one-line project tagline."
+  },
+  {
+    "id": "study_plan",
+    "prompt": "I have 6 weeks to prepare for a university exam on operating systems (processes, scheduling, memory management, file systems, concurrency). Research the key topics, then build a week-by-week study plan, and finally write three sample exam questions with answers."
+  },
+  {
+    "id": "api_design",
+    "prompt": "Design a REST API for a small library lending system (books, members, loans). Describe the data model, list the endpoints with methods and paths, then write the SQL DDL for the tables, and summarize the main trade-offs of your design."
+  },
+  {
+    "id": "marketing_launch",
+    "prompt": "We are launching a privacy-focused note-taking app. Research who the target audience is, then write a short launch announcement (under 150 words), propose three social-media post ideas, and suggest a pricing model."
+  },
+  {
+    "id": "algorithm_explain",
+    "prompt": "Explain how Dijkstra's shortest-path algorithm works to a second-year CS student, then provide a clean Python implementation with comments, and finally analyze its time and space complexity."
+  },
+  {
+    "id": "incident_review",
+    "prompt": "A web service had a 2-hour outage caused by a database connection pool exhaustion. Analyze the likely root causes, propose immediate mitigations and longer-term fixes, then draft a concise post-mortem summary suitable for stakeholders."
+  }
+]
