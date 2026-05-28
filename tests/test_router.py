@@ -43,11 +43,11 @@ class TestDynamicRouter(unittest.TestCase):
         self.assertIn("general", model.capabilities)
 
     def test_router_node_dynamic_assignment(self):
-        subtasks = [
-            SubTask(id="1", description="Write code", required_capabilities=["coding"]),
-            SubTask(id="2", description="Research AI", required_capabilities=["research"])
-        ]
-        
+        subtasks = {
+            "1": SubTask(id="1", description="Write code", required_capabilities=["coding"]),
+            "2": SubTask(id="2", description="Research AI", required_capabilities=["research"])
+        }
+
         state: State = {
             "user_input": "Do coding and research",
             "subtasks": subtasks,
@@ -55,12 +55,12 @@ class TestDynamicRouter(unittest.TestCase):
             "metadata": {},
             "retry_count": 0
         }
-        
+
         result = router_node(state)
-        
+
         # Verify both assigned models are free
-        self.assertTrue(result["subtasks"][0].assigned_model.endswith(":free"))
-        self.assertTrue(result["subtasks"][1].assigned_model.endswith(":free"))
+        self.assertTrue(result["subtasks"]["1"].assigned_model.endswith(":free"))
+        self.assertTrue(result["subtasks"]["2"].assigned_model.endswith(":free"))
         self.assertIn("routing_decisions", result["metadata"])
 
 if __name__ == "__main__":

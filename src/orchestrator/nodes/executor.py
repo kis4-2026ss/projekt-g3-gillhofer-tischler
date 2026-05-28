@@ -16,6 +16,52 @@ def _ensure_prefix(model: str) -> str:
     return model
 
 
+# A dependency is "satisfied" once its task reaches a terminal state. We treat a
+# failed prerequisite as satisfied too, so a dependent task still runs (degraded)
+# instead of being stranded forever — and so a cycle can never deadlock the graph.
+_TERMINAL_STATUSES = ("completed", "failed")
+
+
+def ready_subtasks(subtasks: dict):
+    """
+    Return the assigned subtasks whose dependencies are all in a terminal state,
+    i.e. the next wave that is safe to run in parallel.
+
+    If nothing is ready but assigned tasks remain (a dependency cycle or a dep on
+    a task that will never run), every remaining assigned task is returned so the
+    graph makes progress instead of hanging.
+    """
+    assigned = [t for t in subtasks.values() if t.status == "assigned"]
+    if not assigned:
+        return []
+
+    ready = []
+    for task in assigned:
+        deps = [subtasks[d] for d in task.dependencies if d in subtasks]
+        if all(d.status in _TERMINAL_STATUSES for d in deps):
+            ready.append(task)
+
+    if not ready:
+        print("[DISPATCH] No subtask is ready but some remain (dependency cycle?); "
+              "dispatching all remaining to avoid deadlock.")
+        return assigned
+    return ready
+
+
+def prereq_context(task, subtasks: dict):
+    """Build the context block from a task's completed prerequisites (empty if none)."""
+    deps = [subtasks[d] for d in task.dependencies if d in subtasks]
+    if not deps:
+        return ""
+    parts = []
+    for dep in deps:
+        if dep.status == "completed" and dep.result:
+            parts.append(f"[{dep.id}] {dep.result}")
+        else:
+            parts.append(f"[{dep.id}] (prerequisite produced no result)")
+    return "Context from prerequisite subtasks:\n" + "\n\n".join(parts)
+
+
 def subtask_worker(input_data: dict):
     """
     Executes a single subtask. This is the worker node for parallel execution.
@@ -25,9 +71,16 @@ def subtask_worker(input_data: dict):
     metadata: dict = input_data.get("metadata", {})
     rate_limited_models = metadata.get("rate_limited_models", [])
     dead_models = metadata.get("dead_models", [])
-    
+    context = input_data.get("context", "")
+
     current_model = _ensure_prefix(task.assigned_model)
     tried_models = [current_model]
+
+    # Feed completed prerequisite results forward so a dependent task can use them.
+    if context:
+        user_content = f"{context}\n\nNow perform your task:\n{task.description}"
+    else:
+        user_content = task.description
 
     while True:
         current_model = _ensure_prefix(current_model)
@@ -47,7 +100,7 @@ def subtask_worker(input_data: dict):
                 "model": current_model,
                 "messages": [
                     {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": task.description},
+                    {"role": "user", "content": user_content},
                 ],
             }
             

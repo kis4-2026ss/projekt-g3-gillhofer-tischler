@@ -13,10 +13,10 @@ class TestAggregatorValidator(unittest.TestCase):
         mock_response.choices[0].message.content = "This is the synthesized final response."
         mock_call.return_value = mock_response
 
-        subtasks = [
-            SubTask(id="1", description="Task 1", result="Result 1", status="completed"),
-            SubTask(id="2", description="Task 2", result="Result 2", status="completed")
-        ]
+        subtasks = {
+            "1": SubTask(id="1", description="Task 1", result="Result 1", status="completed"),
+            "2": SubTask(id="2", description="Task 2", result="Result 2", status="completed")
+        }
 
         state: State = {
             "user_input": "Combine task 1 and task 2",
@@ -27,16 +27,18 @@ class TestAggregatorValidator(unittest.TestCase):
 
         result = aggregator_node(state)
 
-        self.assertEqual(result["final_output"], "This is the synthesized final response.")
+        # The aggregator appends an "ORCHESTRATOR INSIGHTS" footer, so check the
+        # synthesized body is present rather than asserting exact equality.
+        self.assertIn("This is the synthesized final response.", result["final_output"])
         mock_call.assert_called_once()
 
     @patch('src.orchestrator.nodes.aggregator.call_with_retry')
     def test_aggregator_all_failed(self, mock_call):
         # No completed subtasks -> no synthesis, failure flagged, LLM not called.
-        subtasks = [
-            SubTask(id="1", description="Task 1", status="failed"),
-            SubTask(id="2", description="Task 2", status="failed"),
-        ]
+        subtasks = {
+            "1": SubTask(id="1", description="Task 1", status="failed"),
+            "2": SubTask(id="2", description="Task 2", status="failed"),
+        }
         state: State = {
             "user_input": "Do something",
             "subtasks": subtasks,
@@ -65,7 +67,7 @@ class TestAggregatorValidator(unittest.TestCase):
 
         state: State = {
             "user_input": "Test request",
-            "subtasks": [SubTask(id="1", description="t", result="r", status="completed")],
+            "subtasks": {"1": SubTask(id="1", description="t", result="r", status="completed")},
             "final_output": "The final answer.",
             "metadata": {}
         }
@@ -90,7 +92,7 @@ class TestAggregatorValidator(unittest.TestCase):
 
         state: State = {
             "user_input": "Test request",
-            "subtasks": [SubTask(id="1", description="t", result="r", status="completed")],
+            "subtasks": {"1": SubTask(id="1", description="t", result="r", status="completed")},
             "final_output": "The final answer.",
             "metadata": {}
         }
@@ -105,7 +107,7 @@ class TestAggregatorValidator(unittest.TestCase):
         # All subtasks failed -> invalid without calling the LLM.
         state: State = {
             "user_input": "Test request",
-            "subtasks": [SubTask(id="1", description="t", status="failed")],
+            "subtasks": {"1": SubTask(id="1", description="t", status="failed")},
             "final_output": "No results were generated. All subtasks failed to execute (1).",
             "metadata": {"execution_failed": True}
         }

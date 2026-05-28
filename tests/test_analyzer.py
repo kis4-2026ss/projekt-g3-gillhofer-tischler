@@ -35,19 +35,19 @@ class TestAnalyzer(unittest.TestCase):
         
         state: State = {
             "user_input": "Research AI impact and write summary",
-            "subtasks": [],
+            "subtasks": {},
             "final_output": None,
             "metadata": {}
         }
-        
+
         result = analyzer_node(state)
-        
+
         self.assertEqual(len(result["subtasks"]), 2)
-        self.assertEqual(result["subtasks"][0].description, "Research AI impact")
+        self.assertEqual(result["subtasks"]["1"].description, "Research AI impact")
         self.assertEqual(result["metadata"]["intent"], "Research and summarize AI impact")
         self.assertEqual(result["metadata"]["complexity"], 7)
-        self.assertEqual(result["subtasks"][1].dependencies, ["1"])
-        self.assertIsInstance(result["subtasks"][0], SubTask)
+        self.assertEqual(result["subtasks"]["2"].dependencies, ["1"])
+        self.assertIsInstance(result["subtasks"]["1"], SubTask)
 
     @patch('src.orchestrator.nodes.analyzer.call_with_retry')
     def test_analyzer_json_markdown(self, mock_completion):
@@ -58,14 +58,14 @@ class TestAnalyzer(unittest.TestCase):
         
         state: State = {
             "user_input": "Some task",
-            "subtasks": [],
+            "subtasks": {},
             "final_output": None,
             "metadata": {}
         }
-        
+
         result = analyzer_node(state)
         self.assertEqual(len(result["subtasks"]), 1)
-        self.assertEqual(result["subtasks"][0].description, "task 1")
+        self.assertEqual(result["subtasks"]["1"].description, "task 1")
         self.assertEqual(result["metadata"]["intent"], "test")
 
 if __name__ == "__main__":

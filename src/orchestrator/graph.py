@@ -3,32 +3,36 @@ from langgraph.types import Send
 from .state import State
 from .nodes.analyzer import analyzer_node
 from .nodes.router import router_node
-from .nodes.executor import subtask_worker
+from .nodes.executor import subtask_worker, ready_subtasks, prereq_context
 from .nodes.verifier import verifier_node
 from .nodes.aggregator import aggregator_node
 from .nodes.validator import validator_node
 
 def dispatch_subtasks(state: State):
     """
-    Dispatcher function that fans out to parallel subtask workers.
-    Returns a list of Send objects for all subtasks that are ready for execution.
+    Dispatcher that fans out one parallel worker per subtask that is ready to run.
+
+    A subtask is ready when all of its declared dependencies have reached a
+    terminal state; each Send carries the prerequisites' results as context so
+    the dependent task can build on them. This runs in waves: after a wave fans
+    in to the verifier, this is called again for the next wave, and once nothing
+    remains it routes to the aggregator.
     """
     subtasks = state["subtasks"]
     metadata = state.get("metadata", {})
-    
-    # In this simple implementation, we fan out all assigned tasks at once.
-    # More advanced logic could handle dependencies (e.g., only Send tasks whose deps are 'completed').
-    
-    sends = []
-    for task_id, task in subtasks.items():
-        if task.status == "assigned":
-            sends.append(Send("executor", {"task": task, "metadata": metadata}))
-    
-    if not sends:
-        # If no tasks are ready (shouldn't happen with router before us), go straight to aggregator
+
+    ready = ready_subtasks(subtasks)
+    if not ready:
         return "aggregator"
-        
-    return sends
+
+    return [
+        Send("executor", {
+            "task": task,
+            "metadata": metadata,
+            "context": prereq_context(task, subtasks),
+        })
+        for task in ready
+    ]
 
 def should_continue(state: State):
     """
@@ -71,10 +75,19 @@ def create_orchestrator():
         }
     )
     
-    # All executor instances fan in to the verifier
+    # All executor instances in a wave fan in to the verifier, which then loops
+    # back to the dispatcher for the next dependency wave (or on to the aggregator
+    # once every subtask has finished).
     workflow.add_edge("executor", "verifier")
-    workflow.add_edge("verifier", "aggregator")
-    
+    workflow.add_conditional_edges(
+        "verifier",
+        dispatch_subtasks,
+        {
+            "executor": "executor",
+            "aggregator": "aggregator"
+        }
+    )
+
     workflow.add_edge("aggregator", "validator")
     
     # Conditional edge for validation and retry loop
