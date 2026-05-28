@@ -33,6 +33,42 @@ class TestAggregatorValidator(unittest.TestCase):
         mock_call.assert_called_once()
 
     @patch('src.orchestrator.nodes.aggregator.call_with_retry')
+    def test_aggregator_restores_dropped_result(self, mock_call):
+        # The synthesis model includes t1 and t2 but drops t3 entirely; the backstop
+        # must re-append t3's content so nothing is lost from the main answer.
+        mock_response = MagicMock()
+        mock_response.choices[0].message.content = (
+            "France's capital Paris hosts the Eiffel Tower. "
+            "Photosynthesis converts sunlight into chemical energy in plants."
+        )
+        mock_call.return_value = mock_response
+
+        subtasks = {
+            "t1": SubTask(id="t1", description="capital of France",
+                          result="The capital of France is Paris and the Eiffel Tower stands there.",
+                          status="completed"),
+            "t2": SubTask(id="t2", description="explain photosynthesis",
+                          result="Photosynthesis converts sunlight into chemical energy in plants.",
+                          status="completed"),
+            "t3": SubTask(id="t3", description="explain quicksort",
+                          result="Quicksort is a divide-and-conquer sorting algorithm with average nlogn complexity.",
+                          status="completed"),
+        }
+        state: State = {
+            "user_input": "Answer three distinct questions",
+            "subtasks": subtasks,
+            "final_output": None,
+            "metadata": {},
+        }
+
+        result = aggregator_node(state)
+        out = result["final_output"]
+        # Dropped t3 was restored; t1/t2 already present and not duplicated.
+        self.assertIn("Quicksort", out)
+        self.assertIn("divide-and-conquer", out)
+        self.assertEqual(out.count("divide-and-conquer"), 1)
+
+    @patch('src.orchestrator.nodes.aggregator.call_with_retry')
     def test_aggregator_all_failed(self, mock_call):
         # No completed subtasks -> no synthesis, failure flagged, LLM not called.
         subtasks = {
@@ -117,6 +153,57 @@ class TestAggregatorValidator(unittest.TestCase):
         mock_call.assert_not_called()
         validation = result["metadata"]["validation"]
         self.assertEqual(validation["score"], 0)
+        self.assertFalse(validation["is_valid"])
+
+    @patch('src.orchestrator.nodes.validator.call_with_retry')
+    def test_validator_weighted_subscores(self, mock_call):
+        # Overall is a weighted blend (corr 0.4, cons/comp 0.3) of the three sub-scores.
+        mock_response = MagicMock()
+        mock_response.choices[0].message.content = json.dumps({
+            "consistency_score": 80,
+            "correctness_score": 60,
+            "completeness_score": 100,
+            "feedback": "ok",
+        })
+        mock_call.return_value = mock_response
+
+        state: State = {
+            "user_input": "Test request",
+            "subtasks": {"1": SubTask(id="1", description="t", result="r", status="completed")},
+            "final_output": "The final answer.",
+            "metadata": {},
+        }
+
+        result = validator_node(state)
+        validation = result["metadata"]["validation"]
+        self.assertEqual(validation["score"], 78)  # round(.3*80 + .4*60 + .3*100)
+        self.assertTrue(validation["is_valid"])
+
+    @patch('src.orchestrator.nodes.validator.call_with_retry')
+    def test_validator_partial_failure_lowers_score(self, mock_call):
+        # One of two subtasks failed -> overall is scaled by the 0.5 success ratio.
+        mock_response = MagicMock()
+        mock_response.choices[0].message.content = json.dumps({
+            "consistency_score": 90,
+            "correctness_score": 90,
+            "completeness_score": 90,
+            "feedback": "ok",
+        })
+        mock_call.return_value = mock_response
+
+        state: State = {
+            "user_input": "Two-part request",
+            "subtasks": {
+                "1": SubTask(id="1", description="a", result="done", status="completed"),
+                "2": SubTask(id="2", description="b", status="failed"),
+            },
+            "final_output": "Partial answer.",
+            "metadata": {},
+        }
+
+        result = validator_node(state)
+        validation = result["metadata"]["validation"]
+        self.assertEqual(validation["score"], 45)  # round(90 * 1/2)
         self.assertFalse(validation["is_valid"])
 
 if __name__ == "__main__":

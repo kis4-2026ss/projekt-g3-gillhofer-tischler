@@ -35,11 +35,16 @@ def validator_node(state: State):
 
     model = get_main_model()
 
-    # Prepare a summary of subtasks for context
-    subtask_summary = "\n".join([f"- {t.id}: {t.description} (Status: {t.status})" for t in subtask_list])
+    # Include a snippet of each subtask's actual result so completeness can be judged
+    # against what was produced — not just the task descriptions.
+    subtask_summary = "\n".join(
+        f"- {t.id} [{t.status}]: {t.description}"
+        + (f"\n      produced: {t.result.strip()[:300]}" if t.result else "")
+        for t in subtask_list
+    )
 
     prompt = f"""
-    You are a Quality Validator for an AI Orchestrator. Your goal is to review the final output of the system and ensure it meets high standards.
+    You are a STRICT Quality Validator for an AI Orchestrator. Score the final output critically and honestly.
 
     Original User Request: {user_input}
 
@@ -49,22 +54,30 @@ def validator_node(state: State):
     Final Output to Validate:
     {final_output}
 
-    Evaluate the final output based on these criteria:
-    1. Consistency: Is the output logical and free of internal contradictions?
-    2. Correctness: Does the output accurately address the facts and requirements of the request?
-    3. Completeness: Are all parts of the user's original request and the subtasks fully addressed?
+    Rate the output on three INDEPENDENT dimensions, each from 0 to 100:
+    - consistency: logical, coherent, free of internal contradictions.
+    - correctness: factually accurate and actually does what was asked.
+    - completeness: every part of the request is addressed AND every subtask's produced result is reflected in the final output. If a subtask produced a deliverable that is missing from the final output, completeness MUST be low.
 
-    Provide your evaluation in JSON format:
+    Scoring guide (apply honestly — most real outputs are NOT perfect):
+      90-100 = flawless, fully meets the bar
+      75-89  = good, only minor gaps or rough edges
+      60-74  = acceptable but with clear gaps or inaccuracies
+      40-59  = weak, major parts missing or wrong
+      0-39   = poor, largely fails the request
+    Judge each dimension separately and do NOT default to round numbers like 90 or 100;
+    reserve 95+ for genuinely excellent work.
+
+    Return ONLY this JSON object:
     {{
-      "score": (integer 0-100),
-      "consistency_check": "Brief feedback on consistency",
-      "correctness_check": "Brief feedback on correctness",
-      "completeness_check": "Brief feedback on completeness",
-      "is_valid": (boolean, true if score >= 70),
-      "feedback": "Overall feedback and suggestions for improvement"
+      "consistency_score": <integer 0-100>,
+      "correctness_score": <integer 0-100>,
+      "completeness_score": <integer 0-100>,
+      "consistency_check": "one-sentence justification",
+      "correctness_check": "one-sentence justification",
+      "completeness_check": "one-sentence justification",
+      "feedback": "specific, actionable suggestions to improve the output"
     }}
-
-    Return ONLY the JSON object.
     """
 
     try:
@@ -86,14 +99,42 @@ def validator_node(state: State):
 
         validation_data = json.loads(content)
 
-        # Decide validity in code rather than trusting the LLM's self-reported boolean.
-        try:
-            score = int(validation_data.get("score", 0))
-        except (TypeError, ValueError):
-            score = 0
+        # Build the score in code from the three sub-scores rather than trusting a
+        # single gestalt number (which the LLM tends to peg at ~95). Correctness is
+        # weighted highest. Falls back to a legacy single "score" field if present.
+        def _clamp(value):
+            try:
+                return max(0, min(100, int(round(float(value)))))
+            except (TypeError, ValueError):
+                return None
+
+        cons = _clamp(validation_data.get("consistency_score"))
+        corr = _clamp(validation_data.get("correctness_score"))
+        comp = _clamp(validation_data.get("completeness_score"))
+        present = [s for s in (cons, corr, comp) if s is not None]
+
+        if cons is not None and corr is not None and comp is not None:
+            base = round(0.30 * cons + 0.40 * corr + 0.30 * comp)
+        elif present:
+            base = round(sum(present) / len(present))
+        else:
+            base = _clamp(validation_data.get("score")) or 0
+
+        # Tie quality to execution success: a run that only completed part of its
+        # subtasks cannot score as if everything had worked.
+        total = len(subtask_list) or 1
+        success_ratio = len(completed) / total
+        score = round(base * success_ratio)
+
+        validation_data["consistency_score"] = cons
+        validation_data["correctness_score"] = corr
+        validation_data["completeness_score"] = comp
         validation_data["score"] = score
         validation_data["is_valid"] = score >= 70
 
+        print(f"[VALIDATOR] Sub-scores — consistency:{cons} correctness:{corr} completeness:{comp}")
+        if success_ratio < 1:
+            print(f"[VALIDATOR] Execution penalty: {len(completed)}/{total} subtasks completed (x{success_ratio:.2f})")
         print(f"[VALIDATOR] Quality Score: {score}/100")
         print(f"[VALIDATOR] Valid: {validation_data['is_valid']}")
 

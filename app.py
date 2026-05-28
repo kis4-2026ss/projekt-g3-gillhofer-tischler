@@ -24,7 +24,13 @@ load_dotenv()
 st.set_page_config(page_title="AI Meta-Orchestrator", page_icon="🤖", layout="wide")
 
 _IMG_RE = re.compile(r"\[LOCAL IMAGE SAVED TO: (.+?)\]")
-_STAGE_ORDER = ["Analyze", "Route", "Execute", "Aggregate", "Validate"]
+
+_STATUS_META = {
+    "queued":    ("⏳", "queued"),
+    "running":   ("🔄", "running"),
+    "completed": ("✅", "done"),
+    "failed":    ("❌", "failed"),
+}
 
 
 @st.cache_resource(show_spinner=False)
@@ -45,42 +51,86 @@ def show_images_in(text: str):
             st.image(path, caption=os.path.basename(path))
 
 
-# --- Live progress -----------------------------------------------------------
+# --- Live task board (shows parallel execution) ------------------------------
 
-def _new_progress_lines(state: dict, seen: set):
-    """Yield human-readable lines for milestones reached since the last snapshot."""
-    subtasks = state.get("subtasks") or {}
-    metadata = state.get("metadata") or {}
+def _board_from_state(state: dict) -> dict:
+    """Reconstruct a task board from a (final) state — used to replay history."""
+    board = {}
+    for tid, task in (state.get("subtasks") or {}).items():
+        board[tid] = {
+            "description": task.description,
+            "model": (task.assigned_model or "").split("/")[-1] or "…",
+            "capabilities": list(task.required_capabilities),
+            "dependencies": list(task.dependencies),
+            "status": task.status if task.status in ("completed", "failed") else "queued",
+        }
+    return board
 
-    if subtasks and "analyzed" not in seen:
-        seen.add("analyzed")
-        intent = metadata.get("intent", "")
-        yield f"🧩 Decomposed into **{len(subtasks)}** subtask(s)" + (f" — _{intent}_" if intent else "")
 
-    if subtasks and "routed" not in seen and all(t.assigned_model for t in subtasks.values()):
-        seen.add("routed")
-        yield "🧭 Routed each subtask to its best-fit model"
-
-    for task in subtasks.values():
+def _merge_state(board: dict, state: dict):
+    """Fold a full-state snapshot into the board without downgrading a live status."""
+    for tid, task in (state.get("subtasks") or {}).items():
+        b = board.setdefault(tid, {})
+        b["description"] = task.description
+        b["capabilities"] = list(task.required_capabilities)
+        b["dependencies"] = list(task.dependencies)
+        model = (task.assigned_model or "").split("/")[-1]
+        if model:
+            b["model"] = model
         if task.status in ("completed", "failed"):
-            key = f"task:{task.id}:{task.status}"
-            if key not in seen:
-                seen.add(key)
-                model = (task.assigned_model or "?").split("/")[-1]
-                yield f"{status_icon(task.status)} `{task.id}` → `{model}`"
+            b["status"] = task.status
+        elif b.get("status") not in ("running", "completed", "failed"):
+            b["status"] = "queued"
 
-    if state.get("final_output") and "aggregated" not in seen:
-        seen.add("aggregated")
-        yield "🧵 Synthesized the final answer"
 
-    validation = metadata.get("validation")
-    if validation and "validated" not in seen:
-        seen.add("validated")
-        yield f"🏁 Quality score **{validation.get('score', 0)}/100**"
+def _apply_event(board: dict, event: dict):
+    """Apply a live task_start / task_end event emitted by a worker."""
+    tid = event.get("id")
+    if not tid:
+        return
+    b = board.setdefault(tid, {})
+    if event["type"] == "task_start":
+        if event.get("description"):
+            b["description"] = event["description"]
+        if event.get("capabilities"):
+            b["capabilities"] = event["capabilities"]
+        if event.get("dependencies"):
+            b["dependencies"] = event["dependencies"]
+        model = (event.get("model") or "").split("/")[-1]
+        if model:
+            b["model"] = model
+        b["status"] = "running"
+    elif event["type"] == "task_end":
+        b["status"] = event.get("status", "completed")
+
+
+def _board_markdown(board: dict, live: bool) -> str:
+    if not board:
+        return "_Decomposing the request…_"
+    lines = []
+    running = sum(1 for b in board.values() if b.get("status") == "running")
+    if live and running:
+        lines.append(f"**⚡ {running} task(s) running in parallel**")
+    for tid in sorted(board):
+        b = board[tid]
+        icon, label = _STATUS_META.get(b.get("status", "queued"), ("•", ""))
+        deps = b.get("dependencies") or []
+        dep_txt = f" · depends on {', '.join(deps)}" if deps else ""
+        lines.append(
+            f"{icon} **`{tid}`** — {b.get('description', '…')}  \n"
+            f"&nbsp;&nbsp;&nbsp;↳ `{b.get('model', '…')}`{dep_txt} · _{label}_"
+        )
+    return "\n\n".join(lines)
+
+
+def render_board(state: dict):
+    """Static board for replaying a finished run from history."""
+    st.markdown("**🧩 Task plan & status**")
+    st.markdown(_board_markdown(_board_from_state(state), live=False))
 
 
 def run_with_progress(prompt: str) -> dict:
-    """Stream the orchestrator run, showing progress live, and return the final state."""
+    """Stream the run, showing a live board of subtasks executing in parallel."""
     initial_state = {
         "user_input": prompt,
         "subtasks": {},
@@ -89,17 +139,22 @@ def run_with_progress(prompt: str) -> dict:
         "retry_count": 0,
     }
     final_state = initial_state
-    seen: set = set()
+    board: dict = {}
 
-    with st.status("Orchestrating…", expanded=True) as status:
+    with st.status("Orchestrating… (tasks run in parallel)", expanded=True) as status:
+        board_ph = st.empty()
         try:
-            for snapshot in get_orchestrator().stream(
-                initial_state, stream_mode="values", config={"recursion_limit": 50}
+            for mode, data in get_orchestrator().stream(
+                initial_state, stream_mode=["values", "custom"], config={"recursion_limit": 50}
             ):
-                final_state = snapshot
-                for line in _new_progress_lines(snapshot, seen):
-                    st.write(line)
-            status.update(label="Done ✓", state="complete", expanded=False)
+                if mode == "values":
+                    final_state = data
+                    _merge_state(board, data)
+                else:  # custom progress event from a worker thread
+                    _apply_event(board, data)
+                board_ph.markdown(_board_markdown(board, live=True))
+            board_ph.markdown(_board_markdown(board, live=False))
+            status.update(label="Done ✓", state="complete", expanded=True)
         except Exception as e:  # surface API/key/runtime errors instead of a blank page
             status.update(label="Failed", state="error")
             st.error(f"Orchestration failed: {e}")
@@ -138,11 +193,12 @@ def render_result(state: dict):
             if validation.get("feedback"):
                 st.caption(validation["feedback"])
 
-        st.markdown(f"**Subtasks ({len(subtasks)})**")
+        st.markdown(f"**Subtasks ({len(subtasks)}) — what each one does**")
         for task in subtasks.values():
             model = (task.assigned_model or "unassigned").split("/")[-1]
-            with st.expander(f"{status_icon(task.status)} `{task.id}` · {model}"):
-                st.caption(task.description)
+            short = task.description if len(task.description) <= 45 else task.description[:45] + "…"
+            with st.expander(f"{status_icon(task.status)} `{task.id}` · {short}"):
+                st.caption(f"Model: `{model}`")
                 if task.required_capabilities:
                     st.caption("Capabilities: " + ", ".join(task.required_capabilities))
                 if task.dependencies:
@@ -189,6 +245,8 @@ for turn in st.session_state.history:
     with st.chat_message("user"):
         st.markdown(turn["problem"])
     with st.chat_message("assistant"):
+        with st.expander("🧩 Task plan & parallel execution"):
+            st.markdown(_board_markdown(_board_from_state(turn["state"]), live=False))
         render_result(turn["state"])
 
 if prompt := st.chat_input("Describe your problem, or refine the previous one…"):

@@ -1,5 +1,20 @@
 from ..state import State
 from ..utils import call_with_retry, get_main_model
+import re
+
+
+def _signature_words(text: str) -> set:
+    """Distinctive (5+ char) tokens, used to check whether a result survived synthesis."""
+    return {w for w in re.findall(r"[a-z0-9]{5,}", (text or "").lower())}
+
+
+def _coverage(result: str, output: str) -> float:
+    """Fraction of a result's distinctive words that appear in the aggregated output."""
+    sig = _signature_words(result)
+    if not sig:
+        return 1.0
+    return len(sig & _signature_words(output)) / len(sig)
+
 
 def aggregator_node(state: State):
     """
@@ -46,16 +61,15 @@ def aggregator_node(state: State):
     {results_text}
     
     Instructions:
-    1.  Synthesize the information into a logical flow.
-    2.  Ensure all parts of the user's request are addressed.
-    3.  IMPORTANT: If any subtask result contains a local file path (e.g., [LOCAL IMAGE SAVED TO: ...]), YOU MUST HIGHLIGHT THIS clearly at the beginning or end of your response so the user knows where their file is.
-    4.  IMPORTANT: If a subtask provided an 'image generation prompt' instead of an actual image, present this clearly in a separate block titled 'IMAGE GENERATION PROMPT' for the user to copy-copy.
-    5.  IMPORTANT: If any subtask result contains an image URL or a Markdown image (e.g., ![image](url)), YOU MUST PRESERVE IT EXACTLY in the final output.
-    6.  Remove any redundant information or conflicting statements.
-    7.  Maintain a professional and helpful tone.
-    8.  The final output should be the complete answer to the user, not a summary of the tasks.
-    
-    Final Synthesized Response:
+    1.  INCLUDE THE FULL CONTENT of EVERY subtask result above. Never omit, drop, or summarize-away any subtask's deliverable — the user must receive ALL of them. This is the most important rule.
+    2.  Organize distinct deliverables under clear markdown section headings (## Heading). Closely related results may be merged into one coherent section.
+    3.  Preserve concrete artifacts VERBATIM: code inside fenced ```code``` blocks, tables, data, formulas, and lists.
+    4.  If a result contains a local file path (e.g. [LOCAL IMAGE SAVED TO: ...]), highlight it clearly.
+    5.  If a result contains an image URL or a Markdown image (e.g. ![image](url)), preserve it EXACTLY.
+    6.  Only remove EXACT duplicate sentences shared across subtasks. Never drop unique content just to shorten the text.
+    7.  Write the answer itself in a professional tone — not a description of the tasks.
+
+    Final Response:
     """
     
     try:
@@ -67,8 +81,20 @@ def aggregator_node(state: State):
             ]
         }
         response = call_with_retry(kwargs)
-        final_output = response.choices[0].message.content
-        
+        final_output = response.choices[0].message.content or ""
+
+        # Safety net: a weak synthesis model sometimes silently drops whole subtask
+        # deliverables. Detect any completed result largely absent from the synthesis
+        # and append it verbatim so nothing is lost from the main answer.
+        missing = [t for t in completed if _coverage(t.result, final_output) < 0.25]
+        if missing:
+            restored = ["\n\n---\n\n## Additional task results"]
+            for t in missing:
+                heading = (t.description or t.id).strip().rstrip(".")
+                restored.append(f"### {heading}\n\n{t.result.strip()}")
+            final_output += "\n\n" + "\n\n".join(restored)
+            print(f"  [AGGREGATOR] Restored {len(missing)} subtask result(s) dropped during synthesis.")
+
         # Add Orchestrator Insights
         insights = ["\n\n--- 🤖 ORCHESTRATOR INSIGHTS ---"]
         for task in subtask_list:

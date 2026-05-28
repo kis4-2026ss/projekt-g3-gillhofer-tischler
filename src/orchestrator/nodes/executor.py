@@ -3,11 +3,30 @@ from ..utils import call_with_retry
 from .registry import registry
 import os
 
+try:
+    # Lets a node push custom progress events into LangGraph's stream so the UI can
+    # show subtasks starting/finishing live (proving parallel execution).
+    from langgraph.config import get_stream_writer
+except Exception:  # older langgraph without custom streaming
+    get_stream_writer = None
+
 # Errors that mean "this specific model is unusable" — rotate to a different model.
 _DEAD_MODEL_MARKERS = ("404", "not found", "no endpoints", "not a valid model", "does not exist")
 _RATE_LIMIT_MARKERS = ("429", "rate limit", "too many requests")
 
 MAX_MODELS_PER_TASK = 4
+
+
+def _emit(event: dict):
+    """Push a progress event to the stream writer if one is active; never raises."""
+    if get_stream_writer is None:
+        return
+    try:
+        writer = get_stream_writer()
+        if writer:
+            writer(event)
+    except Exception:
+        pass
 
 
 def _ensure_prefix(model: str) -> str:
@@ -82,19 +101,43 @@ def subtask_worker(input_data: dict):
     else:
         user_content = task.description
 
+    _emit({
+        "type": "task_start",
+        "id": task.id,
+        "description": task.description,
+        "capabilities": list(task.required_capabilities),
+        "dependencies": list(task.dependencies),
+        "model": task.assigned_model,
+    })
+
     while True:
         current_model = _ensure_prefix(current_model)
         print(f"Executing task: {task.id} with model: {current_model}")
 
-        system_prompt = (
-            "You are a specialized worker in an AI swarm. "
-            "Your task is to execute the specific instruction provided. "
-            "Do NOT ask clarifying questions. "
-            f"Expected format: {task.expected_output or 'Provide the content requested.'}"
-        )
+        # The router normalizes image capabilities to "image", so detect both forms.
+        is_image_task = any(cap in task.required_capabilities for cap in ["image", "image_generation"])
 
-        is_image_task = any(cap in task.required_capabilities for cap in ["image_generation"])
-        
+        if is_image_task:
+            # Free models can't emit binary image files. Always produce a vivid,
+            # generation-ready description DIRECTLY — never reply "I can't make images"
+            # and never ask the user whether they'd like a description instead.
+            system_prompt = (
+                "You are a specialized worker in an AI swarm. The system cannot output "
+                "binary image files. The user asked for an image, so your job is to WRITE a "
+                "vivid, richly detailed visual description of that image — a ready-to-use "
+                "prompt for an image generator (subject, composition, colors, lighting, "
+                "style, mood, background). Output the description directly. Do NOT ask "
+                "whether the user wants a description, do NOT ask clarifying questions, and "
+                "do NOT state that you are unable to create images."
+            )
+        else:
+            system_prompt = (
+                "You are a specialized worker in an AI swarm. "
+                "Your task is to execute the specific instruction provided. "
+                "Do NOT ask clarifying questions. "
+                f"Expected format: {task.expected_output or 'Provide the content requested.'}"
+            )
+
         try:
             kwargs = {
                 "model": current_model,
@@ -165,7 +208,8 @@ def subtask_worker(input_data: dict):
             task.status = "completed"
             task.assigned_model = current_model
             print(f"  [SUCCESS] Completed task {task.id}")
-            
+            _emit({"type": "task_end", "id": task.id, "status": "completed", "model": current_model})
+
             # Return updated subtask in dictionary format for merging
             return {
                 "subtasks": {task.id: task},
@@ -190,6 +234,7 @@ def subtask_worker(input_data: dict):
             if len(tried_models) >= MAX_MODELS_PER_TASK:
                 print(f"  [ERROR] Task {task.id} failed after {len(tried_models)} models: {e}")
                 task.status = "failed"
+                _emit({"type": "task_end", "id": task.id, "status": "failed"})
                 return {
                     "subtasks": {task.id: task},
                     "metadata": {

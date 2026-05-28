@@ -24,35 +24,58 @@ def analyzer_node(state: State):
     for m in registry.models:
         all_caps.update(m.capabilities)
     available_capabilities = ", ".join(sorted(list(all_caps)))
-    
+
+    # On a retry, feed the validator's feedback back in so the re-decomposition
+    # fixes what failed instead of repeating the same (poor) split.
+    feedback_note = ""
+    if retry_count > 0:
+        prior_feedback = (state.get("metadata", {}) or {}).get("validation", {}).get("feedback")
+        if prior_feedback:
+            feedback_note = (
+                f"\n    A PREVIOUS attempt was judged insufficient. Reviewer feedback: "
+                f"\"{prior_feedback}\".\n"
+                f"    Re-decompose to fix this directly — add a missing step, tighten the scope, "
+                f"or merge redundant subtasks.\n"
+            )
+
     prompt = f"""
-    You are an expert task analyzer and decomposer. Your goal is to interpret a complex user request, identify the core intent, and break it down into smaller, manageable subtasks.
-    
+    You are an expert task analyzer and decomposer. Interpret the user's request, identify the core intent, and break it into clean, non-overlapping subtasks that together fully cover it.
+
     User Request: {user_input}
-    
+
     Available model capabilities in this system: {available_capabilities}
-    
-    Step 1: Analyze the overall intent and complexity (1-10).
-    Step 2: Decompose the task into a logical sequence of subtasks.
-    
-    IMPORTANT: Be efficient but thorough. 
-    - If a task is simple (like a quick question), use only ONE subtask. 
-    - For 'Research' requests, prioritize a 'Deep Research' pattern: Decompose into 1. Data Collection (finding facts), 2. Synthesis/Analysis (connecting the dots), and 3. Verification/Fact-Checking.
-    - For image generation requests, use exactly ONE subtask with 'image_generation' capability IF available.
-    - If you cannot fulfill a request with the available capabilities, do your best with 'reasoning' and 'general' capabilities.
-    - Use the 'coding' capability for any task requiring code generation.
-    
-    For each subtask, provide:
-    - id: A unique string identifier.
-    - description: A clear, actionable instruction.
-    - expected_output: What the result of this subtask should look like.
-    - required_capabilities: A list of capabilities needed. Choose from the available list: {available_capabilities}.
-    - priority: An integer (1 for highest priority, larger for lower).
-    - dependencies: A list of 'id's of subtasks that must be completed BEFORE this one.
-    
-    Return ONLY a JSON object with the following structure:
+    {feedback_note}
+    Decomposition rules — follow strictly:
+    1. ATOMIC: each subtask is ONE self-contained unit of work with a single concrete deliverable. Never bundle two unrelated jobs into one subtask.
+    2. NON-OVERLAPPING & COMPLETE: no two subtasks may produce the same output, and together they must cover the entire request — nothing missing, nothing duplicated.
+    3. MINIMAL: use the FEWEST subtasks that cleanly cover the request. A simple, single-intent request = exactly ONE subtask. Split only when the request has genuinely distinct steps or needs different capabilities. Do not fragment trivially.
+    4. ONE CAPABILITY EACH: give each subtask a single primary capability from the list above so it can be routed to a specialist model (e.g. 'coding' for code, 'research' for fact-finding, 'creative' for prose/imagery, 'summarization' for condensing).
+    5. DEPENDENCIES DRIVE PARALLELISM: put an id in "dependencies" ONLY when the subtask genuinely needs another subtask's output before it can start. Independent subtasks MUST have empty dependencies so they execute in parallel. A subtask that combines or builds on earlier results must list those ids.
+    6. SPECIFIC: each description states exactly what to produce, not just a topic.
+
+    Useful patterns:
+    - Deep research: t1) collect facts/data, t2) analyze & synthesize (depends on t1), t3) verify / fact-check (depends on t2).
+    - Image request: exactly ONE subtask using the image capability.
+    - Code request: use the 'coding' capability.
+    - If the available capabilities cannot fully satisfy the request, do your best with 'reasoning' / 'general'.
+
+    EXAMPLE — request: "Research the best note-taking apps, then write a short blog post recommending one, and suggest a logo concept":
     {{
-      "intent": "The identified core intent of the user",
+      "intent": "Recommend a note-taking app via a short blog post plus a logo concept",
+      "complexity": 6,
+      "subtasks": [
+        {{"id": "t1", "description": "Research the top note-taking apps and list each one's key strengths and weaknesses.", "expected_output": "A comparison of 3-5 apps with pros and cons.", "required_capabilities": ["research"], "priority": 1, "dependencies": []}},
+        {{"id": "t2", "description": "Write a ~200-word blog post recommending one app, justified by the research.", "expected_output": "A short, polished blog post.", "required_capabilities": ["creative"], "priority": 2, "dependencies": ["t1"]}},
+        {{"id": "t3", "description": "Describe a logo concept for the recommended app.", "expected_output": "A vivid visual description suitable for an image generator.", "required_capabilities": ["image"], "priority": 2, "dependencies": ["t1"]}}
+      ]
+    }}
+    Here t2 and t3 both depend only on t1, so they run in parallel once t1 is done.
+
+    For each subtask provide: id, description, expected_output, required_capabilities (from the list above), priority (1 = highest), dependencies (ids that must finish first).
+
+    Return ONLY a JSON object with this structure:
+    {{
+      "intent": "The core intent of the user",
       "complexity": 5,
       "subtasks": [
         {{
@@ -65,7 +88,7 @@ def analyzer_node(state: State):
         }}
       ]
     }}
-    
+
     Do not include any other text, explanations, or markdown formatting.
     """
     
